@@ -1,0 +1,210 @@
+package app
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
+	"github.com/lpernett/godotenv"
+	"gorm.io/gorm/clause"
+	"log"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
+	model "newSimpegAPI/model"
+)
+
+var (
+	SIAP_AUTH_API       string
+	SIAP_REST_API_TOKEN string
+)
+
+type JwtCustomClaims struct {
+	Nip     string `json:"nip"`
+	TokenId string `json:"token_id"`
+	jwt.RegisteredClaims
+}
+
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	//SIAP_AUTH_API = os.Getenv("SIAP_AUTH_API")
+	SIAP_AUTH_API = os.Getenv("SIAP_AUTH_API_DEV")
+	SIAP_REST_API_TOKEN = os.Getenv("SIAP_REST_API_TOKEN")
+}
+
+func UserInfo(nip, token_id string) (result model.UsersToken, RowsAffected int64) {
+	db, _ := model.CreateCon()
+	r := db.Model(&model.UsersToken{}).First(&result, "nip = ? and token_id = ?", nip, token_id)
+
+	RowsAffected = r.RowsAffected
+
+	return
+}
+
+func Login(c echo.Context) error {
+	ret, err := siapLogin(c)
+
+	token_id := uuid.New().String()
+	expires_at := time.Now().Add(time.Hour * 24)
+
+	if err != nil {
+		return err
+	}
+
+	// Throws unauthorized error
+	if !ret.LoginStatus {
+		return echo.ErrUnauthorized
+	}
+
+	// Set custom claims
+	claims := &JwtCustomClaims{
+		ret.Datauser.Nip,
+		token_id,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expires_at),
+		},
+	}
+
+	// Create token with claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Generate encoded token and send it as response.
+	t, err := token.SignedString([]byte("simpeg2023"))
+	if err != nil {
+		return err
+	}
+
+	ti := time.Now()
+	ret.Datauser.LoginAt = &ti
+	ret.Datauser.ExpiresAt = &expires_at
+	ret.Datauser.TokenId = token_id
+
+	ret.Datauser = saveloginInfo(ret.Datauser)
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"token":      t,
+		"datauser":   ret.Datauser,
+		"statucCode": http.StatusOK,
+	})
+}
+
+func Logout(c echo.Context) error {
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(*JwtCustomClaims)
+	logout := time.Now()
+
+	db, _ := model.CreateCon()
+	db.Model(&model.UsersToken{}).Where("nip = ? and token_id = ?", claims.Nip, claims.TokenId).Updates(map[string]interface{}{"token_id": "", "logout_at": &logout})
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"nip":        claims.Nip,
+		"message":    "Logout Success",
+		"statucCode": http.StatusOK,
+	})
+}
+
+func IsLogin(c echo.Context) error {
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(*JwtCustomClaims)
+	//dtuser := claims.Datauser
+
+	result, _ := UserInfo(claims.Nip, claims.TokenId)
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"datauser":   result,
+		"statucCode": http.StatusOK,
+	})
+}
+
+func AuthorizeRequest(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		fmt.Println("Validating User")
+
+		if strings.HasSuffix(c.Path(), "/login") {
+			return next(c)
+		}
+
+		user := c.Get("user").(*jwt.Token)
+		claims := user.Claims.(*JwtCustomClaims)
+		//dtuser := claims.Datauser
+
+		_, ra := UserInfo(claims.Nip, claims.TokenId)
+		if ra == 0 {
+			return c.JSON(http.StatusUnauthorized, echo.Map{
+				"message":    "Request Unauthorized",
+				"statucCode": http.StatusUnauthorized,
+			})
+		}
+		c.Set("nip", claims.Nip)
+		return next(c)
+	}
+}
+
+func saveloginInfo(dtuser model.UsersToken) model.UsersToken {
+	db, _ := model.CreateCon()
+
+	db.Model(&model.UsersToken{}).Clauses(clause.Returning{}, clause.OnConflict{
+		Columns: []clause.Column{{Name: "nip"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{
+			"id_opd":     dtuser.IdOpd,
+			"parent_opd": dtuser.ParentOpd,
+			"token_id":   dtuser.TokenId,
+			"login_at":   dtuser.LoginAt,
+			"expires_at": dtuser.ExpiresAt,
+		}),
+	}).Create(&dtuser)
+
+	return dtuser
+}
+
+func siapLogin(c echo.Context) (res model.SIAPResponse, err error) {
+	payload := &bytes.Buffer{}
+	writer := multipart.NewWriter(payload)
+	_ = writer.WriteField("username", c.FormValue("username"))
+	_ = writer.WriteField("password", c.FormValue("password"))
+	err = writer.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	url := fmt.Sprintf(`%s/loginUser`, SIAP_AUTH_API)
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("POST", url, payload)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	req.Header["token"] = []string{SIAP_REST_API_TOKEN}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	//log.Println(req.Header)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	return
+}
