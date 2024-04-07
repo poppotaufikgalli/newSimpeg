@@ -33,6 +33,7 @@ type RiwayatJabatan struct {
 	KjabBkn        *string    `json:"kjab_bkn"`
 	Jnsjab         string     `json:"jnsjab"`
 	Keselon        float64    `json:"keselon"`
+	Eselon         Eselon     `gorm:"foreignKey:Keselon" json:"eselon"`
 	Njab           *string    `json:"njab"`
 	Sjab           *float64   `json:"sjab"`
 	Nunker         string     `json:"nunker"`

@@ -42,7 +42,7 @@ func GetRiwayatAngkaKredit(searchString model.SearchRiwayatAngkaKredit) (riwayat
 		result = result.Where("master_riwayat_angka_kredit.thn = ?", searchString.Thn)
 	}
 
-	result = result.Find(&riwayat_angka_kredit)
+	result = result.Preload("JabatanFt").Find(&riwayat_angka_kredit)
 
 	return
 

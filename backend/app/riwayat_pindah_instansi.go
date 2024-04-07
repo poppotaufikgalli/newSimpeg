@@ -46,7 +46,7 @@ func GetRiwayatPindahInstansi(searchString model.SearchRiwayatPindahInstansi) (r
 		result = result.Where("master_riwayat_pindah_instansi.tmtPi = ?", searchString.TmtPi)
 	}
 
-	result = result.Find(&riwayat_pindah_instansi)
+	result = result.Preload("InstansiBaru").Preload("InstansiLama").Order("tmtPi desc").Find(&riwayat_pindah_instansi)
 
 	return
 

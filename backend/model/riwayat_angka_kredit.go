@@ -25,6 +25,7 @@ type RiwayatAngkaKredit struct {
 	Nip       string     `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
 	Jns       string     `json:"jns"`
 	Kjab      string     `json:"kjab"`
+	JabatanFt JabatanFt  `gorm:"foreignKey:Kjab" json:"jabatan_ft"`
 	Tmulai    *time.Time `json:"tmulai" validate:"required"`
 	Tselesai  *time.Time `json:"tselesai"`
 	Utama     float64    `json:"utama"`

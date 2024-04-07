@@ -31,6 +31,7 @@ type RiwayatKeluarga struct {
 	Stunj     string     `json:"stunj"`
 	Kjkel     int        `json:"kjkel"`
 	Kkerja    float64    `json:"kkerja"`
+	Pekerjaan Pekerjaan  `gorm:"foreignKey:Kkerja" json:"Pekerjaan"`
 	Instansi  *string    `json:"instansi"`
 	NipKel    *string    `json:"nip_kel"`
 	Hubkel    string     `json:"hubkel"`

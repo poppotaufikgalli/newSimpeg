@@ -39,7 +39,7 @@ func GetRiwayatPenghargaan(searchString model.SearchRiwayatPenghargaan) (riwayat
 		result = result.Where("master_riwayat_penghargaan.thn = ?", searchString.Thn)
 	}
 
-	result = result.Find(&riwayat_penghargaan)
+	result = result.Preload("JenisPenghargaan").Find(&riwayat_penghargaan)
 
 	return
 

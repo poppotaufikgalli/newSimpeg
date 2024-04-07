@@ -37,11 +37,13 @@ type RiwayatPangkat struct {
 	Tskpang     *time.Time `json:"tskpang"`
 	Tmtpang     *time.Time `json:"tmtpang" validate:"required"`
 	Kgolru      float64    `json:"kgolru" validate:"required"`
+	Pangkat     Pangkat    `gorm:"foreignKey:Kgolru" json:"pangkat"`
 	Nsttpp      *string    `json:"nsttpp"`
 	Tsttpp      *time.Time `json:"tsttpp"`
 	Tmtlgas     *time.Time `json:"tmtlgas"`
 	Kjpns       int        `json:"kjpns"`
 	Knpang      float64    `json:"knpang" validate:"required"`
+	JenisKp     JenisKp    `gorm:"foreignKey:Knpang" json:"jenis_kp"`
 	Mskerja     float64    `json:"mskerja"`
 	Blnkerja    float64    `json:"blnkerja"`
 	Srtsehatno  *string    `json:"srtsehatno"`

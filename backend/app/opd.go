@@ -15,7 +15,7 @@ import (
 func GetOPD(searchString model.SearchOpd) (opd []model.Opd, result *gorm.DB) {
 	db, _ := model.CreateCon()
 
-	result = db.Model(&model.Opd{}).Preload("SubOpd")
+	result = db.Model(&model.Opd{}).Preload("SubOpd").Preload("ListFormasiJabatan")
 
 	//nama
 	if searchString.Nama != "" {

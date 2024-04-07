@@ -22,6 +22,11 @@ func GetSingkronisasi(searchString model.SearchSingkronisasi) (singkronisasi []m
 		result = result.Where("master_singkronisasi.id = ?", searchString.Id)
 	}
 
+	//host
+	if searchString.Host != "" {
+		result = result.Where("master_singkronisasi.host = ?", searchString.Host)
+	}
+
 	result = result.Find(&singkronisasi)
 
 	return

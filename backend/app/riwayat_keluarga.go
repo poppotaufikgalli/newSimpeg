@@ -34,7 +34,7 @@ func GetRiwayatKeluarga(searchString model.SearchRiwayatKeluarga) (riwayat_kelua
 		result = result.Where("master_riwayat_keluarga.nama_kel LIKE ?", strings.Join(str, ""))
 	}
 
-	result = result.Find(&riwayat_keluarga)
+	result = result.Preload("Pekerjaan").Find(&riwayat_keluarga)
 
 	return
 

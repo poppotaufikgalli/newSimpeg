@@ -9,7 +9,8 @@ func (Singkronisasi) TableName() string {
 }
 
 type SearchSingkronisasi struct {
-	Id string `json:"id,omitempty"`
+	Id   string `json:"id,omitempty"`
+	Host string `json:"host,omitempty"`
 }
 
 type DeleteSingkronisasi struct {

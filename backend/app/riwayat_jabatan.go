@@ -69,7 +69,7 @@ func GetRiwayatJabatan(searchString model.SearchRiwayatJabatan) (riwayat_jabatan
 		result = result.Where("master_riwayat_jabatan.id_opd_tambahan = ?", searchString.IdOpdTambahan)
 	}
 
-	result = result.Find(&riwayat_jabatan)
+	result = result.Preload("Eselon").Order("tmtjab desc").Find(&riwayat_jabatan)
 
 	return
 

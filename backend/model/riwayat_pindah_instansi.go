@@ -25,7 +25,9 @@ type RiwayatPindahInstansi struct {
 	Nip                       string     `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
 	Eselon                    *string    `json:"eselon"`
 	InstansiIndukBaru         *string    `gorm:"column:instansiIndukBaru" json:"instansiIndukBaru"`
+	InstansiBaru              Instansi   `gorm:"foreignKey:instansiIndukBaru" json:"instansiBaru"`
 	InstansiIndukLama         *string    `gorm:"column:instansiIndukLama" json:"instansiIndukLama"`
+	InstansiLama              Instansi   `gorm:"foreignKey:instansiIndukLama" json:"instansiLama"`
 	InstansiKerjaBaru         *string    `gorm:"column:instansiKerjaBaru" json:"instansiKerjaBaru"`
 	InstansiKerjaLama         *string    `gorm:"column:instansiKerjaLama" json:"instansiKerjaLama"`
 	JabatanFungsionalBaru     *string    `gorm:"column:jabatanFungsionalBaru" json:"jabatanFungsionalBaru"`

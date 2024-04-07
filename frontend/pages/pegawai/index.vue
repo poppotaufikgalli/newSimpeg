@@ -1,71 +1,93 @@
 <script setup>
+const { $encodeBase64 } = useNuxtApp()
+const emptyNip = null
 const search = ref('');
 const page = ref(1);
 
 const from = ref(0)
 const perPage = ref(10)
 
-const dataPegawai = await useFetch('/api/pegawai')
-console.log(dataPegawai)
+const opds = ref([])
+const lsPangkats = ref([])
+const jenisjabatans = ref([])
+const eselons = ref([])
+const statuspegawais = ref([])
+const jenispegawais = ref([])
+const loading = ref(true)
 
-const dataOPD = await useFetch('/api/opd')
+const { pending: pendingRef, data, refresh: refreshDataRef } = await useLazyAsyncData('getDataRef', async () => {
+  const [dataOPD, dataPangkat, dataJenisJabatan, dataEselon, dataStatusPegawai, dataJenisPegawai] = await Promise.all([
+    $fetch('/api/gets/opd'),
+    $fetch('/api/gets/pangkat'),
+    $fetch('/api/gets/jenis_jabatan'),
+    $fetch('/api/gets/eselon'),
+    $fetch('/api/gets/status_pegawai'),
+    $fetch('/api/gets/jenis_pegawai')
+  ])
 
-const selOpd = ref([])
+  //console.log("getDataRef")
+
+  opds.value = dataOPD
+  lsPangkats.value = dataPangkat
+  jenisjabatans.value = dataJenisJabatan
+  eselons.value = dataEselon
+  statuspegawais.value = dataStatusPegawai
+  jenispegawais.value = dataJenisPegawai
+
+  //loading.value = false
+});
+
+const { pending, data: dataPegawai, refresh: refreshDataPegawai } = await useAsyncData('getDataPegawai', () => CariData())
+
+//const selOpd = ref([])
+//const selSubOpd = ref([])
+//const selJJ = ref([])
+//const selEselon = ref([])
+//const selStatusPegawai = ref({1: true, 2: true, 11: true})
+//const selJenisPegawai = ref({10: true, 15: true, 20: true})
+
 const searchOpd = ref(null)
-//const selIdOpd = ref('1')
-
-
-const selSubOpd = ref([])
+const searchJJ = ref(null)
+const searchEselon = ref(null)
 const searchSubOpd = ref(null)
-//const selIdSubOpd = ref(null)
-
-
 const searchNama = ref(null)
+const searchNip = ref(null)
+const searchStatusPegawai = ref([1,2,11])
+const searchJenisPegawai = ref([10,15,20])
 
-const pegawais = computed({
-	get(){
-		//const {data} = dataPegawai
-		//return data.value.pegawai
-		return dataPegawai
-	}
-})
+const refSubOpd = ref(null)
+const refOpd = ref(null)
+const refJenisJabatan = ref(null)
+const refEselon = ref(null)
+const refStatusPegawai = ref(null)
+const refJenisPegawai = ref(null)
 
 const opds_utama = computed({
 	get(){
-		const {data} = dataOPD
-		//console.log(_filter)  
-		var result = (data.value.opd).filter((opd) => {
-			if(searchOpd.value != null && searchOpd.value != ""){
-				return opd.nama.toLowerCase().includes(searchOpd.value.toLowerCase()) && opd.sfilter == 1
-			}else{
-				return opd.sfilter == 1
-			}
-		});
-
-		return result
+		const dataOPD = opds.value
+		return dataOPD
 	}
 })
 
 const sub_opds_utama = computed({
 	get(){
-		const {data} = dataOPD
-		//console.log(_filter)  
-		console.log(data.value)
-		var result = (data.value.opd).filter((opd) => {
-			if(searchSubOpd.value != null && searchSubOpd.value != ""){
-				return opd.nama.toLowerCase().includes(searchSubOpd.value.toLowerCase()) && opd.parent_opd == selOpd.value.id
-			}else{
-				return opd.parent_opd == selOpd.value.id
-			}
-		});
-
-		return result
-	}
+		if(searchOpd.value != null){
+	  	var result = _find(opds.value, function(o){
+	  		return o.id == searchOpd.value
+	  	})
+	  	if(result){
+	  		refSubOpd.value.reinit()
+	  	}
+	  	return result.sub_opd
+	  }
+	  //searchSubOpd.value = null
+	  return searchOpd.value
+	},
 })
 
 const paginate_pegawais = computed({
 	get(){
-		return pegawais.value.slice(from.value, from.value + perPage.value) || null
+		return dataPegawai.value.slice(from.value, from.value + perPage.value) || null
 	}
 })
 
@@ -76,52 +98,92 @@ const prevPage = () => {
 }
 
 const nextPage = () => {
-	if(from.value + perPage.value <= pegawais.value.length){
+	if(from.value + perPage.value <= dataPegawai.value.length){
 		from.value = from.value + perPage.value
 	}
 }
 
-const setSearchOPD = (opd) => {
-	selOpd.value = opd
-	//selIdOpd.value = opd.id
-
-	//console.log(selIdOpd.value, opd)
-
-	HSDropdown.close('#hs-dropdown-1')
+const setStatusPegawai = (item) => {
+	let id = item.kstatus;
+	selStatusPegawai.value[id] = !selStatusPegawai.value[id]
 }
 
-const setSearchSubOPD = (opd) => {
-	selSubOpd.value = opd
-
-	HSDropdown.close('#hs-dropdown-2')
+const setJenisPegawai = (item) => {
+	let id = item.id;
+	selJenisPegawai.value[id] = !selJenisPegawai.value[id]
 }
 
 const ResetData = () => {
-	selOpd.value = []
-	selSubOpd.value = []
+	searchOpd.value = null
+	searchSubOpd.value = null
 	searchNama.value = null
-	//selIdOpd.value = '1'
-	//searchOpd.value = null
+	searchJJ.value = null
+	searchEselon.value = null
+	searchNip.value = null
+	searchStatusPegawai.value = [1,2,11]
+	searchJenisPegawai.value = [10,15,20]
 
-	//selSubOpd.value = null
-	//setSearchSubOPD.value = null
+	refOpd.value.reinit()
+	refSubOpd.value.reinit()
+	refJenisJabatan.value.reinit()
+	refEselon.value.reinit()
+	refStatusPegawai.value.reinit()
+	refJenisPegawai.value.reinit()
+
+	refreshNuxtData("getDataPegawai")
+}
+
+const CariData2 = async() => {
+	refreshNuxtData("getDataPegawai")
 }
 
 const CariData = async() => {
-	console.log("cari data")
+	loading.value = true
 
-	const sdataPeg = await $fetch('/api/pegawai', {
-		method: 'POST',
-		data: {
-			parent_opd: selSubOpd.value != [] ? selSubOpd.value.id : selOpd.value.id,
-			nama: searchNama.value,
-		}
+	var body = JSON.stringify({
+		nip: searchNip.value ?? undefined,
+		nama: searchNama.value ?? undefined,
+		id_opd: searchSubOpd.value ? searchSubOpd.value : searchOpd.value,
+		jnsjab: searchJJ.value ? searchJJ.value *1 : undefined,
+		keselon: searchEselon.value ? searchEselon.value *1 : undefined,
+		kstatus: searchStatusPegawai.value.map(Number),
+		kjpeg: searchJenisPegawai.value.map(Number),
 	})
 
-	console.log(sdataPeg)
-	
+	body = body == "{}" ? null : body
+
+	var result = await $fetch('/api/pegawai', {
+		method: 'POST',
+		body: body,
+	})
+
+	loading.value = false
+
+	return result
 }
-//HSDropdown.open('#hs-dropdown')
+
+onMounted(() => {
+	console.log("onMounted ==== pegawai")
+	refreshNuxtData(["getDataPegawai", "getDataRef"])
+	//console.log(searchJenisPegawai.value)
+})
+
+function nama_pangkat(kgolru){
+	var n = _find(lsPangkats.value, {id: kgolru})
+	return n?.nama
+}
+
+function formatNip(nip) {
+	var nnip = nip.slice(0,8) +" "+ nip.slice(8,14)+" "+ nip.slice(14,15)+" "+ nip.slice(15,18)
+	return nnip
+}
+
+const router = useRouter()
+
+function EditData(nip){
+	const snip = $encodeBase64(nip)
+	navigateTo({ path: '/pegawai/'+snip+'/DataInduk/identitas' })
+}
 </script>
 
 <template>
@@ -129,264 +191,460 @@ const CariData = async() => {
 	<div class="">
 		<!-- Card -->
 		<div class="flex flex-col">
-			<div class="-m-1.5 overflow-x-auto">
-				<div class="p-1.5 min-w-full inline-block align-middle">
-					<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-						<!-- Header -->
-						<div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200">
-							<div>
-								<h2 class="text-xl font-semibold text-gray-800">
-									Data Pegawai
-								</h2>
-								<p class="text-sm text-gray-600">
-									Jumlah Pegawai: {{pegawais.length || 0}}
-								</p>
+			<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+				<!-- Header -->
+				<div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200">
+					<div>
+						<h2 class="text-xl font-semibold text-gray-800">
+							Data Pegawai
+						</h2>
+						<p class="text-sm text-gray-600">
+							Jumlah Pegawai: {{dataPegawai ? dataPegawai.length : 0}}
+						</p>
+					</div>
+
+					<div>
+						<div class="inline-flex gap-x-2">
+							<NuxtLink class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" :to="`/pegawai/${emptyNip}/DataInduk/identitas`">
+								<svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+								Tambah
+							</NuxtLink>
+						</div>
+					</div>
+				</div>
+				<!-- End Header -->
+
+				<!-- Accordion -->
+				<div class="border-b border-gray-200 bg-gray-50">
+					<div class="p-4 gap-2 text-gray-800">
+						<div class="flex flex-col gap-2">
+							<!--Unit Kerja -->
+							<div class="grid sm:grid-cols-12 gap-1 pt-8 pb-2 first:pt-0 last:pb-0 border-t first:border-transparent border-gray-200">
+				        <label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+			            Unit Kerja
+			          </label>
+				        <!-- End Col -->
+				        <div class="sm:col-span-11 px-1 my-auto">
+				        	<SearchSelect2 v-if="!pendingRef" ref="refOpd" id="opd_utama" :options="opds_utama" keyList="id" namaList="nama" v-model="searchOpd" />
+				        </div>
+						     
+								<template v-if="opds_utama">
+					        <label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+			            	Sub Unit Kerja
+			          	</label>
+					        <!-- End Col -->
+					        <div class="sm:col-span-11 px-1 my-auto">
+				        		<SearchSelect2 v-if="!pendingRef" ref="refSubOpd" id="sub_opd_utama" :options="sub_opds_utama" keyList="id" namaList="nama" v-model="searchSubOpd" />
+				        	</div>
+								</template>
+
+								<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+		            	Jenis Jabatan
+		          	</label>
+				        <!-- End Col -->
+				        <div class="sm:col-span-5 px-1 my-auto">
+			        		<SearchSelect2 v-if="!pendingRef" ref="refJenisJabatan" id="jenisjabatans" :options="jenisjabatans" keyList="id" namaList="nama" v-model="searchJJ" />
+			        	</div>
+
+								<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+		            	Eselon
+		          	</label>
+						    <!-- End Col -->
+						    <div class="sm:col-span-5 px-1 my-auto">
+			        		<SearchSelect2 v-if="!pendingRef" ref="refEselon" id="eselons" :options="eselons" keyList="id" namaList="nama" v-model="searchEselon" />
+			        	</div>
+
+								<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+		            	Status Pegawai 
+		          	</label>
+						    <!-- End Col -->
+						    <div class="sm:col-span-5 px-1 my-auto">
+			        		<SearchSelect2 v-if="!loading" ref="refStatusPegawai" id="statuspegawais" :options="statuspegawais" keyList="kstatus" namaList="nama" v-model="searchStatusPegawai" multiple="multiple" />
+			        	</div>
+
+						    <!--<div id="hs-dropdown-4" class="mx-1 sm:col-span-2 sm:mt-1 hs-dropdown relative sm:inline-flex [--auto-close:inside]">
+									<button id="hs-dropdown-ese" type="button" class="hs-dropdown-toggle py-2 px-4 inline-flex items-center justify-between gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none w-[100%]">
+										<span class="text-start truncate">Pilih</span>
+										<svg class="hs-dropdown-open:rotate-180 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+									</button>
+
+									<div class="hs-dropdown-menu w-100 transition-[opacity,margin] duration hs-dropdown-open:opacity-100 opacity-0 hidden z-10 bg-gray-400 shadow-md rounded-lg p-2" aria-labelledby="hs-dropdown-ese">
+										<div class="max-h-[400px] min-w-[100px] overflow-y-auto
+										  [&::-webkit-scrollbar]:w-2
+										  [&::-webkit-scrollbar-track]:bg-gray-100
+										  [&::-webkit-scrollbar-thumb]:bg-gray-300">
+											<template v-if="!pendingRef" v-for="(item, idx) in statuspegawais" :key="item.id">
+												<div class="relative flex items-start py-2 px-3 rounded-lg hover:bg-gray-100">
+											       	<div class="flex items-center h-5 mt-1">
+											         	<input :id="'kstatus-'+idx" name="kstatus" type="checkbox" class="shrink-0 border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none" @click="setStatusPegawai(item)" :checked="selStatusPegawai[item.kstatus]">
+											       	</div>
+											       	<label :for="'kstatus-'+idx" class="ms-3.5 w-full">
+											         	<span class="mt-1 block text-xs font-semibold text-gray-800">{{item.nama}}</span>
+											       	</label>
+											    </div>
+											</template>
+										</div>
+									</div>
+								</div>-->
+
+								<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+			            Jenis Pegawai
+			          </label>
+				        <!-- End Col -->
+				        <div class="sm:col-span-5 px-1 my-auto">
+			        		<SearchSelect2 v-if="!loading" ref="refJenisPegawai" id="jenispegawais" :options="jenispegawais" keyList="id" namaList="nama" v-model="searchJenisPegawai" multiple="multiple" />
+			        	</div>
+				        <!--<div id="hs-dropdown-4" class="mx-1 sm:col-span-2 sm:mt-1 hs-dropdown relative sm:inline-flex [--auto-close:inside]">
+									<button id="hs-dropdown-ese" type="button" class="hs-dropdown-toggle py-2 px-4 inline-flex items-center justify-between gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none w-[100%]">
+										<span class="text-start truncate">Pilih</span>
+										<svg class="hs-dropdown-open:rotate-180 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+									</button>
+
+									<div class="hs-dropdown-menu w-100 transition-[opacity,margin] duration hs-dropdown-open:opacity-100 opacity-0 hidden z-10 bg-gray-400 shadow-md rounded-lg p-2" aria-labelledby="hs-dropdown-ese">
+										<div class="max-h-[400px] min-w-[100px] overflow-y-auto
+										  [&::-webkit-scrollbar]:w-2
+										  [&::-webkit-scrollbar-track]:bg-gray-100
+										  [&::-webkit-scrollbar-thumb]:bg-gray-300">
+											<template v-if="!pendingRef" v-for="(item, idx) in jenispegawais" :key="item.id">
+												<div class="relative flex items-start py-2 px-3 rounded-lg hover:bg-gray-100">
+											       	<div class="flex items-center h-5 mt-1">
+											         	<input :id="'kjpeg-'+idx" name="kjpeg" type="checkbox" class="shrink-0 border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none" @click="setJenisPegawai(item)" :checked="selJenisPegawai[item.id]">
+											       	</div>
+											       	<label :for="'kjpeg-'+idx" class="ms-3.5 w-full">
+											         	<span class="mt-1 block text-xs font-semibold text-gray-800">{{item.nama}}</span>
+											       	</label>
+											    </div>
+											</template>
+										</div>
+									</div>
+								</div>-->
 							</div>
+							<div class="grid sm:grid-cols-12 gap-1 pt-2 first:pt-0 last:pb-0 border-t first:border-transparent border-gray-200">
+								<label class="inline-block sm:col-span-1 whitespace-nowrap text-sm font-medium mt-2.5">
+		            	NIP
+		          	</label>
+				        <!-- End Col -->
+				        <div class="mx-1 sm:col-span-5 sm:mt-1 relative sm:inline-flex">
+									<input type="search" class="py-2 px-4 mb-2 block w-full border border-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="searchNip">
+								</div>
 
-							<div>
-								<div class="inline-flex gap-x-2">
-									<a class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" href="#">
-										Lihat Semua
-									</a>
+								<label class="inline-block sm:col-span-1 whitespace-nowrap text-sm font-medium mt-2.5">
+		            	Nama
+		          	</label>
+				        <!-- End Col -->
+				        <div class="mx-1 sm:col-span-5 sm:mt-1 relative sm:inline-flex">
+									<input type="search" class="py-2 px-4 mb-2 block w-full border border-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="searchNama">
+								</div>
 
-									<a class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" href="#">
-										<svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-										Tambah
-									</a>
+								<div class="mx-1 sm:col-span-5 sm:col-start-2 relative sm:inline-flex gap-2">
+									<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:pointer-events-none" @click="ResetData()">
+									  Reset
+									</button>
+									<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="CariData2()">
+									  Cari
+									</button>	
 								</div>
 							</div>
 						</div>
-						<!-- End Header -->
+					</div>
+				</div>
+				<!-- End Accordion -->
 
-						<!-- Accordion -->
-						<div class="border-b border-gray-200 bg-gray-50">
-							<div class="py-4 px-6 w-full flex items-center gap-2 font-semibold text-gray-800">
-
-								<div class="grid grid-cols-1 lg:grid-cols-2 gap-y-2 gap-x-4">
-									<div class="flex flex-col gap-2">
-										<!--Unit Kerja -->
-										<div class="sm:inline-flex sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full">
-											<label for="inline-input-label-with-helper-text" class="block text-sm font-medium w-24">Unit Kerja</label>
-											<div id="hs-dropdown-1" class="mt-60 mx-1 sm:mt-1 hs-dropdown relative sm:inline-flex [--auto-close:inside]">
-												<button id="hs-dropdown" type="button" class="hs-dropdown-toggle py-2 px-4 inline-flex items-center justify-between gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none w-80">
-													{{selOpd.nama || "Semua"}}
-													<svg class="hs-dropdown-open:rotate-180 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-												</button>
-
-												<div class="hs-dropdown-menu w-100 transition-[opacity,margin] duration hs-dropdown-open:opacity-100 opacity-0 hidden z-10 bg-white shadow-md rounded-lg p-2" aria-labelledby="hs-dropdown">
-													<input type="search" class="py-2 px-4 mb-2 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Cari Data Unor" v-model="searchOpd">
-													<div class="max-h-[400px] overflow-y-auto
-													  [&::-webkit-scrollbar]:w-2
-													  [&::-webkit-scrollbar-track]:bg-gray-100
-													  [&::-webkit-scrollbar-thumb]:bg-gray-300
-													  dark:[&::-webkit-scrollbar-track]:bg-slate-700
-													  dark:[&::-webkit-scrollbar-thumb]:bg-slate-500">
-														<template v-if="opds_utama" v-for="(opd, idx) in opds_utama" :key="opd.id">
-															<span class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100" @click="setSearchOPD(opd)">
-																{{opd.nama}}
-															</span> 
-														</template>
-													</div>
-												</div>
-											</div>
-										</div>
-
-										<!--Sub Unit Kerja -->
-										<div class="sm:inline-flex sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full">
-											<label for="inline-input-label-with-helper-text" class="block text-sm font-medium w-24">Sub Unit Kerja</label>
-											<div id="hs-dropdown-2" class="mt-60 mx-1 sm:mt-1 hs-dropdown relative sm:inline-flex [--auto-close:inside]">
-												<button id="hs-dropdown" type="button" class="hs-dropdown-toggle py-2 px-4 inline-flex items-center justify-between gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none w-80">
-													{{selSubOpd.nama || "Semua"}}
-													<svg class="hs-dropdown-open:rotate-180 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-												</button>
-
-												<div class="hs-dropdown-menu w-100 transition-[opacity,margin] duration hs-dropdown-open:opacity-100 opacity-0 hidden z-10 bg-white shadow-md rounded-lg p-2" aria-labelledby="hs-dropdown">
-													<input type="search" class="py-2 px-4 mb-2 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Cari Data Sub Unor" v-model="searchSubOpd">
-													<div class="max-h-[400px] overflow-y-auto
-													  [&::-webkit-scrollbar]:w-2
-													  [&::-webkit-scrollbar-track]:bg-gray-100
-													  [&::-webkit-scrollbar-thumb]:bg-gray-300
-													  dark:[&::-webkit-scrollbar-track]:bg-slate-700
-													  dark:[&::-webkit-scrollbar-thumb]:bg-slate-500">
-														<template v-if="sub_opds_utama" v-for="(opd, idx) in sub_opds_utama" :key="opd.id">
-															<span class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100" @click="setSearchSubOPD(opd)">
-																{{opd.nama}}
-															</span> 
-														</template>
-													</div>
-												</div>
-											</div>
-										</div>
-
-										<div class="sm:inline-flex sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full">
-											<label for="inline-input-label-with-helper-text" class="block text-sm font-medium w-24">Nama</label>
-											<div class="w-80">
-												<input type="text" class="py-2 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="searchNama">
-											</div>
-										</div>
-
-										<div class="inline-flex items-center justify-end w-full gap-2">
-											<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:pointer-events-none" @click="ResetData()">
-											  Reset
-											</button>
-											<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="CariData()">
-											  Cari
-											</button>
-										</div>
-									</div>
-								</div>
-							</div>
-							<!--<button type="button" class="hs-collapse-toggle py-4 px-6 w-full flex items-center gap-2 font-semibold text-gray-800" id="hs-basic-collapse" data-hs-collapse="#hs-as-table-collapse">
-								<svg class="hs-collapse-open:rotate-90 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-								Filter Data
-							</button>
-							<div id="hs-as-table-collapse" class="hs-collapse hidden w-full overflow-hidden transition-[height] duration-300" aria-labelledby="hs-basic-collapse">
-								<div class="pb-4 px-6">
-									<div class="flex items-center space-x-2">
-										<span class="size-5 flex justify-center items-center rounded-full bg-blue-600 text-white">
-											<svg class="flex-shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-										</span>
-										<span class="text-sm text-gray-800">
-											There are no insights for this period.
-										</span>
-									</div>
-								</div>
-							</div>-->
-						</div>
-						<!-- End Accordion -->
-
+				<div class="overflow-x-auto border border-t-2">
+					<div class="min-w-full inline-block align-middle">
 						<!-- Table -->
 						<table class="min-w-full divide-y divide-gray-200">
 							<thead class="bg-gray-50">
 								<tr>
-									<th scope="col" class="p-3 text-center">
-										<span class="text-xs font-semibold uppercase tracking-wide text-gray-800">
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
 											No
 										</span>
 									</th>
-
-									<th scope="col" class="p-3 w-[15%] text-center">
-										<span class="text-xs font-semibold uppercase tracking-wide text-gray-800">
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
 											NIP
 										</span>
 									</th>
-
-									<th scope="col" class="p-3 w-[20%] text-center">
-										<span class="text-xs font-semibold uppercase tracking-wide text-gray-800">
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											NIK
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											NPWP
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
 											Nama
 										</span>
 									</th>
-
-									<th scope="col" class="p-3 w-[10%] text-center">
-										<span class="text-xs font-semibold uppercase tracking-wide text-gray-800">
-											Pangkat
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											TTL
 										</span>
 									</th>
-
-									<th scope="col" class="p-3 w-[25%] text-center">
-										<span class="text-xs font-semibold uppercase tracking-wide text-gray-800">
-											Jabatan
-										</span>
-									</th>
-
-									<th scope="col" class="p-3 w-[10%] text-center">
-										<span class="text-xs font-semibold uppercase tracking-wide text-gray-800">
-											Masa Kerja
-										</span>
-									</th>
-
-									<th scope="col" class="p-3 w-[10%] text-center">
-										<span class="text-xs font-semibold uppercase tracking-wide text-gray-800">
-											Pendidikan
-										</span>
-									</th>
-
-									<th scope="col" class="p-3 w-[10%] text-center">
-										<span class="text-xs font-semibold uppercase tracking-wide text-gray-800">
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
 											Usia
 										</span>
 									</th>
-
-									<th scope="col" class="p-3 text-center"></th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Alamat
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Golongan Ruang
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											TMT Pangkat
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Status Kepegawaian
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Jabatan
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											TMT Jabatan
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Nomor SK
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Eselon
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Nama Unit Kerja
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Nama Unit Organisasi
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Pangkat / TMT CPNS
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Pangkat /TMT PNS
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Tingkat Pendidikan
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Pendidikan Umum
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Nama Sekolah
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Jenis Kelamin
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
+											Peringkat
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center"></th>
 								</tr>
 							</thead>
-
-							<tbody class="divide-y divide-gray-200">
-								<template v-if="pegawais" v-for="(pegawai, idx) in paginate_pegawais" :key="idx">
-									<tr class="bg-white hover:bg-gray-50">
-										<td class="size-px">
-											<button type="button" class="block" data-hs-overlay="#hs-ai-invoice-modal">
-												<span class="flex justify-center text-sm px-3 py-0">{{idx+from+1}}</span>
-											</button>
-										</td>
-										<td class="size-px">
-											<span class="flex justify-center text-center text-sm px-3 py-0">{{pegawai.nip}}</span>
-										</td>
-										<td class="size-px">
-											<span class="flex justify-start text-sm px-3 py-0">{{pegawai.nama}}</span>
-										</td>
-										<td class="size-px">
-											<span class="flex justify-center text-center text-sm px-3 py-0">{{pegawai.golongan_ruang}} {{pegawai.nama_pangkat ? "("+pegawai.nama_pangkat+")" : ""}}</span>
-										</td>
-										<td class="size-px">
-											<span class="flex justify-start text-sm px-3 py-0">{{pegawai.njab}}</span>
-										</td>
-										<td class="size-px">
-											<span class="flex justify-start text-sm px-3 py-0">28 Dec, 12:12</span>
-										</td>
-										<td class="size-px">
-											<span class="flex justify-start text-sm px-3 py-0">28 Dec, 12:12</span>
-										</td>
-										<td class="size-px">
-											<span class="flex justify-start text-sm px-3 py-0">28 Dec, 12:12</span>
-										</td>
-										<td class="size-px">
-											<button type="button" class="block" data-hs-overlay="#hs-ai-invoice-modal">
-												<span class="px-3 py-1.5">
-													<span class="py-1 px-2 inline-flex justify-center items-center gap-2 rounded-lg border font-medium bg-white text-gray-700 shadow-sm align-middle hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-blue-600 transition-all text-sm">
-														<svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-															<path d="M1.92.506a.5.5 0 0 1 .434.14L3 1.293l.646-.647a.5.5 0 0 1 .708 0L5 1.293l.646-.647a.5.5 0 0 1 .708 0L7 1.293l.646-.647a.5.5 0 0 1 .708 0L9 1.293l.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .801.13l.5 1A.5.5 0 0 1 15 2v12a.5.5 0 0 1-.053.224l-.5 1a.5.5 0 0 1-.8.13L13 14.707l-.646.647a.5.5 0 0 1-.708 0L11 14.707l-.646.647a.5.5 0 0 1-.708 0L9 14.707l-.646.647a.5.5 0 0 1-.708 0L7 14.707l-.646.647a.5.5 0 0 1-.708 0L5 14.707l-.646.647a.5.5 0 0 1-.708 0L3 14.707l-.646.647a.5.5 0 0 1-.801-.13l-.5-1A.5.5 0 0 1 1 14V2a.5.5 0 0 1 .053-.224l.5-1a.5.5 0 0 1 .367-.27zm.217 1.338L2 2.118v11.764l.137.274.51-.51a.5.5 0 0 1 .707 0l.646.647.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.509.509.137-.274V2.118l-.137-.274-.51.51a.5.5 0 0 1-.707 0L12 1.707l-.646.647a.5.5 0 0 1-.708 0L10 1.707l-.646.647a.5.5 0 0 1-.708 0L8 1.707l-.646.647a.5.5 0 0 1-.708 0L6 1.707l-.646.647a.5.5 0 0 1-.708 0L4 1.707l-.646.647a.5.5 0 0 1-.708 0l-.509-.51z"/>
-															<path d="M3 4.5a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5zm8-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5z"/>
-														</svg>
-													</span>
+							<template v-if="pending">
+								<td colspan="25" align="center">
+									<i>Loading</i>
+								</td>
+							</template>
+							<template v-else>
+								{{data}}
+								<tbody class="divide-y divide-gray-200">
+									<template v-if="dataPegawai" v-for="(pegawai, idx) in paginate_pegawais" :key="idx">
+										<tr class="odd:bg-white even:bg-gray-100" @click="EditData(pegawai.nip)">
+											<td class="size-px p-1" style="vertical-align: top;">
+												<span class="flex justify-center text-xs px-3 py-0">{{idx+from+1}}</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-center text-center text-xs py-0">{{formatNip(pegawai.nip)}}</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-center text-center text-xs py-0">{{pegawai.nik}}</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-center text-center text-xs py-0">{{pegawai.npwp}}</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 150px;">
+												<span class="flex justify-start text-xs py-0">
+													{{pegawai.gldepan ? pegawai.gldepan + ". ": ""}}
+													{{pegawai.nama}}{{pegawai.glblk ? ", "+pegawai.glblk: ""}}
 												</span>
-											</button>
-										</td>
-									</tr>
-								</template>
-							</tbody>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-center text-center text-xs py-0">{{pegawai.ktlahir}}<br>{{$dayjs(pegawai.tlahir).format("DD-MM-YYYY").toString()}}</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 50px;">
+												<span class="flex justify-start text-center text-xs py-0">{{pegawai.umur}}</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 200px;">
+												<span class="flex justify-start text-xs py-0">{{pegawai.aljalan}}</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-center text-xs py-0">{{nama_pangkat(pegawai.kgolru)}}</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-center text-xs py-0">
+													{{pegawai.tmtpang ? $dayjs(pegawai.tmtpang).format("DD-MM-YYYY").toString() : ""}}
+												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-center text-xs py-0">{{pegawai.kstatus}}-{{pegawai.nstatus}}</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 200px;">
+												<span class="flex justify-start text-xs py-0">{{pegawai.njab}}</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-center text-xs py-0">
+													{{pegawai.tmtjab ? $dayjs(pegawai.tmtjab).format("DD-MM-YYYY").toString() : ""}}
+												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-center text-xs py-0">
+													{{pegawai.nskjabat}}
+												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-center text-xs py-0">
+													{{pegawai.neselon}}
+												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 200px;">
+												<span class="flex justify-start text-xs py-0">
+													{{pegawai.nunker}}
+												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 200px;">
+												<span class="flex justify-start text-xs py-0">
+													{{pegawai.nopd}}
+												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; text-align: center;min-width: 100px;">
+												<span class="flex justify-center align-center text-xs py-0">
+													{{nama_pangkat(pegawai.kgolru_cpns)}}<br>{{pegawai.tmtcpns ? $dayjs(pegawai.tmtcpns).format("DD-MM-YYYY").toString() : ""}}
+												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; text-align: center; min-width: 100px;">
+												<span class="flex justify-center text-xs py-0">
+													{{nama_pangkat(pegawai.kgolru_pns)}}<br>{{pegawai.tmtpns ? $dayjs(pegawai.tmtpns).format("DD-MM-YYYY").toString() : ""}}
+												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-start text-xs py-0">
+													{{pegawai.ntpu}}
+												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-start text-xs py-0">
+													{{pegawai.npdum}}
+												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-start text-xs py-0">
+													{{pegawai.nsek}}
+												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-start text-xs py-0">
+													{{pegawai.kjkel == 1 ? "Laki - laki" : "Perempuan"}}
+												</span>
+											</td>
+											<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-start text-xs py-0">
+													{{pegawai.nsek}}
+												</span>
+											</td>
+											<td class="size-px px-1" style="vertical-align: top;">
+												<button type="button" class="block" data-hs-overlay="#hs-ai-invoice-modal">
+													<span class="px-3 py-1.5">
+														<span class="py-1 px-2 inline-flex justify-center items-center gap-2 rounded-lg border font-medium bg-white text-gray-700 shadow-sm align-middle hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-blue-600 transition-all text-xs">
+															<svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+																<path d="M1.92.506a.5.5 0 0 1 .434.14L3 1.293l.646-.647a.5.5 0 0 1 .708 0L5 1.293l.646-.647a.5.5 0 0 1 .708 0L7 1.293l.646-.647a.5.5 0 0 1 .708 0L9 1.293l.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .801.13l.5 1A.5.5 0 0 1 15 2v12a.5.5 0 0 1-.053.224l-.5 1a.5.5 0 0 1-.8.13L13 14.707l-.646.647a.5.5 0 0 1-.708 0L11 14.707l-.646.647a.5.5 0 0 1-.708 0L9 14.707l-.646.647a.5.5 0 0 1-.708 0L7 14.707l-.646.647a.5.5 0 0 1-.708 0L5 14.707l-.646.647a.5.5 0 0 1-.708 0L3 14.707l-.646.647a.5.5 0 0 1-.801-.13l-.5-1A.5.5 0 0 1 1 14V2a.5.5 0 0 1 .053-.224l.5-1a.5.5 0 0 1 .367-.27zm.217 1.338L2 2.118v11.764l.137.274.51-.51a.5.5 0 0 1 .707 0l.646.647.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.646.646.646-.646a.5.5 0 0 1 .708 0l.509.509.137-.274V2.118l-.137-.274-.51.51a.5.5 0 0 1-.707 0L12 1.707l-.646.647a.5.5 0 0 1-.708 0L10 1.707l-.646.647a.5.5 0 0 1-.708 0L8 1.707l-.646.647a.5.5 0 0 1-.708 0L6 1.707l-.646.647a.5.5 0 0 1-.708 0L4 1.707l-.646.647a.5.5 0 0 1-.708 0l-.509-.51z"/>
+																<path d="M3 4.5a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 1 1 0 1h-6a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5zm8-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5z"/>
+															</svg>
+														</span>
+													</span>
+												</button>
+											</td>
+										</tr>
+									</template>
+								</tbody>
+							</template>
+							
 						</table>
-						<!-- End Table -->
-
-						<!-- Footer -->
-						<div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200">
-							<div>
-								<p class="text-sm text-gray-600">
-									<span class="font-semibold text-gray-800">9</span> results
-								</p>
-							</div>
-
-							<div>
-								<div class="inline-flex gap-x-2">
-									<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" @click="prevPage">
-										<svg class="size-3" width="16" height="16" viewBox="0 0 16 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M10.506 1.64001L4.85953 7.28646C4.66427 7.48172 4.66427 7.79831 4.85953 7.99357L10.506 13.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-										</svg>
-										Prev
-									</button>
-
-									<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" @click="nextPage">
-										Next
-										<svg class="size-3" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M4.50598 2L10.1524 7.64645C10.3477 7.84171 10.3477 8.15829 10.1524 8.35355L4.50598 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-										</svg>
-									</button>
-								</div>
-							</div>
-						</div>
-						<!-- End Footer -->
+						<!-- End Table -->	
 					</div>
 				</div>
+
+				<!-- Footer -->
+				<div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200">
+					<div>
+						<!--<p class="text-sm text-gray-600">
+							<span class="font-semibold text-gray-800">9</span> results
+						</p>-->
+						<select class="py-2 px-3 pe-9 block w-full border border-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="perPage">
+							<option value="10">10</option>
+							<option value="20">20</option>
+							<option value="50">50</option>
+							<option value="100">100</option>
+						</select>
+					</div>
+
+					<div>
+						<div class="inline-flex gap-x-2">
+							<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" @click="prevPage">
+								<svg class="size-3" width="16" height="16" viewBox="0 0 16 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10.506 1.64001L4.85953 7.28646C4.66427 7.48172 4.66427 7.79831 4.85953 7.99357L10.506 13.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+								</svg>
+								Prev
+							</button>
+
+							<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" @click="nextPage">
+								Next
+								<svg class="size-3" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M4.50598 2L10.1524 7.64645C10.3477 7.84171 10.3477 8.15829 10.1524 8.35355L4.50598 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+								</svg>
+							</button>
+						</div>
+					</div>
+				</div>
+				<!-- End Footer -->
 			</div>
 		</div>
 		<!-- End Card -->

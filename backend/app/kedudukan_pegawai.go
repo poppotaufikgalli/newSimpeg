@@ -34,7 +34,7 @@ func GetKedudukanPegawai(searchString model.SearchKedudukanPegawai) (kedudukan_p
 		result = result.Where("master_kedudukan_pegawai.ref_simpeg = ?", searchString.RefSimpeg)
 	}
 
-	result = result.Find(&kedudukan_pegawai)
+	result = result.Order("cast(id as unsigned) asc").Find(&kedudukan_pegawai)
 
 	return
 }

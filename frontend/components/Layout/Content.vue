@@ -1,19 +1,13 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/store/auth'; // import the auth store we just created
-const { userInfo } = storeToRefs(useAuthStore());
-const { authenticated, logUserOut } = useAuthStore(); // use authenticateUser action from  auth store
+const { authenticated } = storeToRefs(useAuthStore());
+const { userInfo, logUserOut } = useAuthStore(); // use authenticateUser action from  auth store
 
 const snip = ref('');
 
-console.log(userInfo.value)
-
 const items = [
   [{
-    label: userInfo.value?.nama,
-    slot: 'account',
-    disabled: true
-  }], [{
-    label: 'Lihat Profil',
+    label: 'Profil',
     icon: 'i-heroicons-user-circle',
     to: '/profil'
   }], [{
@@ -180,8 +174,11 @@ function search(){
 		            </a>
 
 		            <div class="pt-3 md:pt-0">
-		              <UDropdown :items="items" :ui="{ item: { disabled: 'cursor-text select-text' } }" :popper="{ placement: 'bottom-start' }">
-						    		<UAvatar src="https://avatars.githubusercontent.com/u/739984?v=4" />
+		              <UDropdown :items="items" :ui="{ item: { disabled: 'cursor-text select-text' } }" :popper="{ placement: 'bottom-end' }">
+		              	<div class="flex items-center">
+		              		<label>{{userInfo?.nama}}</label>
+						    			<UAvatar src="https://avatars.githubusercontent.com/u/739984?v=4" />
+						    		</div>
 
 								    <template #account="{ item }">
 								      	<div class="text-left">
@@ -205,10 +202,9 @@ function search(){
 		  </nav>
 		</header>
 		<!-- ========== END HEADER ========== -->
-  	
-
+  	<div class="bg-gradient-to-r from-cyan-500 to-blue-500 h-36"></div>
 		<div class="w-full pt-5 px-4 sm:px-6 md:px-8">
-			<main class="p-md-4 max-w-[85rem] mx-auto">
+			<main class="p-md-4 max-w-[85rem] mx-auto -mt-32">
 				<slot />
 			</main>
 		</div>

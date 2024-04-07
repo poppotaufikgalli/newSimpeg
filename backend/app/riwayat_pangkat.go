@@ -44,7 +44,7 @@ func GetRiwayatPangkat(searchString model.SearchRiwayatPangkat) (riwayat_pangkat
 		result = result.Where("master_riwayat_pangkat.akhir IN (?)", searchString.Akhir)
 	}
 
-	result = result.Find(&riwayat_pangkat)
+	result = result.Preload("Pangkat").Preload("JenisKp").Order("kgolru desc").Find(&riwayat_pangkat)
 
 	return
 

@@ -37,7 +37,7 @@ func GetRiwayatHukdis(searchString model.SearchRiwayatHukdis) (riwayat_hukdis []
 		result = result.Where("master_riwayat_hukdis.tmt = ?", searchString.Tmt)
 	}
 
-	result = result.Find(&riwayat_hukdis)
+	result = result.Preload("JenisHukdis").Find(&riwayat_hukdis)
 
 	return
 

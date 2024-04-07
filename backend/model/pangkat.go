@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -20,10 +22,17 @@ type DeletePangkat struct {
 	Id string `json:"id" validate:"required"`
 }
 
+func (u *Pangkat) AfterFind(tx *gorm.DB) (err error) {
+	a := u.NamaPangkat
+	u.PangkatGol = fmt.Sprintf("%s (%s)", *a, u.Nama)
+	return
+}
+
 type Pangkat struct {
 	Id          string     `gorm:"primaryKey;autoIncrement:false" json:"id" validate:"required"`
 	Nama        string     `json:"nama"`
 	NamaPangkat *string    `json:"nama_pangkat"`
+	PangkatGol  string     `gorm:"-" json:"pangkat_gol"`
 	RefSimpeg   *string    `json:"ref_simpeg"`
 	Pajak       *float64   `json:"pajak"`
 	CreatedBy   string     `gorm:"<-:create" json:"created_by"`

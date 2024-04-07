@@ -1,5 +1,6 @@
 export default defineEventHandler(async(event) => {
-    const response = await $apiClient(event, "/pegawai")
+    const ep = event.context.params._
+    const response = await $apiClient(event, "/"+ep)
     const {data} = response
     return data;
 })

@@ -7,6 +7,9 @@ declare global {
 }
 
 export default defineNuxtPlugin((nuxtApp) => {
+  nuxtApp.hook("app:beforeMount", () => {
+    window.HSStaticMethods.autoInit();
+  });
   nuxtApp.hook("page:load", () => {
     window.HSStaticMethods.autoInit();
   });

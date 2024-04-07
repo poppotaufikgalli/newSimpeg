@@ -29,6 +29,36 @@ func GetWilayah(searchString model.SearchWilayah) (wilayah []model.Wilayah, resu
 		result = result.Where("master_wilayah.nwil LIKE ?", strings.Join(str, ""))
 	}
 
+	//Twil
+	if searchString.Twil != "" {
+		result = result.Where("master_wilayah.twil = ?", searchString.Twil)
+	}
+
+	//Twil
+	if searchString.Kprov != "" {
+		result = result.Where("master_wilayah.kprov = ?", searchString.Kprov)
+	}
+
+	//Twil
+	if searchString.Kkab != "" {
+		result = result.Where("master_wilayah.kkab = ?", searchString.Kkab)
+	}
+
+	//Twil
+	if searchString.Kkec != "" {
+		result = result.Where("master_wilayah.kkec = ?", searchString.Kkec)
+	}
+
+	//Twil
+	if searchString.Tkdesa != "" {
+		result = result.Where("master_wilayah.tkdesa = ?", searchString.Tkdesa)
+	}
+
+	//Twil
+	if searchString.Kdesa != "" {
+		result = result.Where("master_wilayah.kdesa = ?", searchString.Kdesa)
+	}
+
 	result = result.Find(&wilayah)
 
 	return

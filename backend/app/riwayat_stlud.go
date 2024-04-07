@@ -39,7 +39,7 @@ func GetRiwayatStlud(searchString model.SearchRiwayatStlud) (riwayat_stlud []mod
 		result = result.Where("master_riwayat_stlud.tstlud = ?", searchString.Tstlud)
 	}
 
-	result = result.Find(&riwayat_stlud)
+	result = result.Preload("Stlud").Find(&riwayat_stlud)
 
 	return
 

@@ -39,6 +39,16 @@ func GetFormasiJabatan(searchString model.SearchFormasiJabatan) (formasi_jabatan
 		result = result.Where("master_formasi_jabatan.nama LIKE ?", strings.Join(str, ""))
 	}
 
+	//id_eselon
+	if searchString.IdEselon > 0 {
+		result = result.Where("master_formasi_jabatan.id_eselon = ?", searchString.IdEselon)
+	}
+
+	//id jenis jabatan
+	if searchString.IdJenisJabatan > 0 {
+		result = result.Where("master_formasi_jabatan.id_jenis_jabatan = ?", searchString.IdJenisJabatan)
+	}
+
 	//Kelas Jabatan
 	if len(searchString.KelasJabatan) > 0 {
 		result = result.Where("master_formasi_jabatan.kelas_jabatan IN (?)", searchString.KelasJabatan)

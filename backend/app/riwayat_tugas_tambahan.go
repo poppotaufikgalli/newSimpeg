@@ -51,7 +51,7 @@ func GetRiwayatTugasTambahan(searchString model.SearchRiwayatTugasTambahan) (riw
 		result = result.Where("master_riwayat_tugas_tambahan.status IN (?)", searchString.Status)
 	}
 
-	result = result.Find(&riwayat_tugas_tambahan)
+	result = result.Order("tmtjab desc").Find(&riwayat_tugas_tambahan)
 
 	return
 

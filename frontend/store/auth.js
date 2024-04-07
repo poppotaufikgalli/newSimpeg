@@ -25,8 +25,17 @@ export const useAuthStore = defineStore("auth", {
         const token = useCookie("token") // useCookie new hook in nuxt 3
         token.value = data?.token // set token to cookie
         this.userInfo = data?.datauser
-        this.nama = data?.datauser.nama
         this.authenticated = true // set authenticated  state value to true  
+      }
+    },
+    async islogin(){
+      const {datauser, statucCode} = await $fetch("api/islogin");
+      //console.log(statucCode)
+      if(statucCode == 200){
+        this.userInfo = datauser
+        this.authenticated = true // set authenticated  state value to true  
+      }else{
+        this.authenticated = false
       }
     },
     fakeauth(){

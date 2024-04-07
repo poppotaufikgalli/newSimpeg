@@ -34,7 +34,7 @@ func GetJenisPegawai(searchString model.SearchJenisPegawai) (jenis_pegawai []mod
 		result = result.Where("master_jenis_pegawai.status IN (?)", searchString.Status)
 	}
 
-	result = result.Find(&jenis_pegawai)
+	result = result.Order("cast(id as unsigned) asc").Find(&jenis_pegawai)
 
 	return
 }

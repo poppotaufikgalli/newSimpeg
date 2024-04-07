@@ -1,13 +1,15 @@
 import { useAuthStore } from '~/store/auth';
 
 export default defineNuxtRouteMiddleware((to, from) => {
+    if(!process.client){
+        //console.log("AAA")
+        return
+    }
+
     const { authenticated } = storeToRefs(useAuthStore()); // make authenticated state reactive
-    const { userInfo } = storeToRefs(useAuthStore());
     const token = useCookie('token'); // get token from cookies
 
-    console.log("middleware auth check")
-    console.log(authenticated.value)
-    console.log(userInfo.value)
+    console.log(token.value)
 
     if (token.value) {
         // check if value exists
@@ -21,11 +23,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
       // if token doesn't exist redirect to log in
     if (!token.value && to?.name !== 'login') {
-        abortNavigation();
-        return navigateTo('/login');
-    }
-
-    if(authenticated.value == false){
         abortNavigation();
         return navigateTo('/login');
     }

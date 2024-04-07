@@ -46,7 +46,7 @@ func GetRiwayatPendum(searchString model.SearchRiwayatPendum) (riwayat_pendum []
 		result = result.Where("master_riwayat_organisasi.tempat LIKE ?", strings.Join(str, ""))
 	}
 
-	result = result.Find(&riwayat_pendum)
+	result = result.Preload("TingkatPendidikan").Preload("Pendidikan").Order("cast(ktpu as unsigned)").Find(&riwayat_pendum)
 
 	return
 

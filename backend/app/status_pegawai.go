@@ -29,7 +29,7 @@ func GetStatusPegawai(searchString model.StatusPegawai) (status_pegawai []model.
 		result = result.Where("master_status_pegawai.nama LIKE ?", strings.Join(str, ""))
 	}
 
-	result = result.Find(&status_pegawai)
+	result = result.Order("cast(kstatus as unsigned) asc").Find(&status_pegawai)
 
 	return
 

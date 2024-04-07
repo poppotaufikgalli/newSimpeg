@@ -28,24 +28,13 @@
 </script>
 
 <template>
-	<button type="button" class="hidden" data-hs-overlay="#loadingSpinner">
-    Open modal
-  </button>
-	<div id="loadingSpinner" ref="loadingSpinner" class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto">
-	  <div class="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto">
-	    <div class="relative flex flex-col bg-white shadow-lg rounded-xl">
-	      <div class="p-4 sm:p-10 text-center overflow-y-auto">
-	        <!-- Icon -->
-	        <span class="mb-4 inline-flex justify-center items-center size-[46px] rounded-full border-4 border-green-50 bg-green-100 text-green-500">
-	          <svg class="flex-shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-	            <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z"/>
-	          </svg>
-	        </span>
-	        <!-- End Icon -->
-
-	        <h3 class="mb-2 text-xl font-bold text-gray-800">
-	          Mohon Tunggu Sebentar
-	        </h3>
+	<div id="loadingSpinner" class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none">
+	  <div class="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto min-h-[calc(100%-3.5rem)] flex items-center">
+	    <div class="w-full flex flex-col pointer-events-auto">
+	      <div class="p-4 overflow-y-auto mx-auto">
+	        <div class="animate-spin inline-block size-8 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500" role="status" aria-label="loading">
+					  <span class="sr-only">Loading...</span>
+					</div>
 	      </div>
 	    </div>
 	  </div>

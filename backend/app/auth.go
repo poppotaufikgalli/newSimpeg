@@ -36,8 +36,8 @@ func init() {
 		log.Fatal("Error loading .env file")
 	}
 
-	//SIAP_AUTH_API = os.Getenv("SIAP_AUTH_API")
-	SIAP_AUTH_API = os.Getenv("SIAP_AUTH_API_DEV")
+	SIAP_AUTH_API = os.Getenv("SIAP_AUTH_API")
+	//SIAP_AUTH_API = os.Getenv("SIAP_AUTH_API_DEV")
 	SIAP_REST_API_TOKEN = os.Getenv("SIAP_REST_API_TOKEN")
 }
 

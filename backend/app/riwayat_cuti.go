@@ -44,7 +44,7 @@ func GetRiwayatCuti(searchString model.SearchRiwayatCuti) (riwayat_cuti []model.
 		result = result.Where("master_riwayat_cuti.thn = ?", searchString.Thn)
 	}
 
-	result = result.Find(&riwayat_cuti)
+	result = result.Preload("JenisCuti").Find(&riwayat_cuti)
 
 	return
 
