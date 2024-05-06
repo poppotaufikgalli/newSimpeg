@@ -8,7 +8,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"net/http"
 	model "newSimpegAPI/model"
-	"strconv"
 	"strings"
 )
 
@@ -52,7 +51,7 @@ func FindPegawai(c echo.Context) error {
 
 	appendJab := strings.Join(findJabatan, " ")
 
-	result = result.Joins(appendJab).Preload("JabatanAkhir", "akhir = ? ", 1)
+	result = result.Joins(appendJab).Preload("JabatanAkhir", "master_riwayat_jabatan.akhir = ? ", 1).Preload("PangkatAkhir", "master_riwayat_pangkat.akhir = ? ", 1)
 
 	//nama
 	if searchString.Nama != "" {
@@ -94,7 +93,7 @@ func FindPegawai(c echo.Context) error {
 func GetPegawaiByNip(c echo.Context) error {
 	db, _ := model.CreateCon()
 	var pegawai model.Pegawai
-	nip, _ := strconv.Atoi(c.Param("nip"))
+	nip := c.Param("nip")
 
 	result := db.Model(&model.Pegawai{}).Where("nip = ?", nip).Scan(&pegawai)
 
@@ -199,17 +198,11 @@ func CreatePegawai(c echo.Context) error {
 	err := json.NewDecoder(c.Request().Body).Decode(&pegawai)
 
 	if err != nil {
-		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
-			"statucCode": http.StatusNotImplemented,
-			"errors":     err.Error(),
-		})
+		return c.JSON(http.StatusNotImplemented, err.Error())
 	}
 
 	if err = validate.Struct(pegawai); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
-			"errors":     err.Error(),
-		})
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	pegawai.CreatedBy = fmt.Sprint(c.Get("nip"))
@@ -218,10 +211,7 @@ func CreatePegawai(c echo.Context) error {
 	//fmt.Println(pegawai)
 
 	if result.Error != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
-			"errors":     result.Error.Error(),
-		})
+		return c.JSON(http.StatusBadRequest, result.Error.Error())
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{

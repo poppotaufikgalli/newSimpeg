@@ -57,6 +57,23 @@ func FindRiwayatHukdis(c echo.Context) error {
 	})
 }
 
+func GetRiwayatHukdisByNipJhukumTmt(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_hukdis model.RiwayatHukdis
+	nip := c.Param("nip")
+	jhukum := c.Param("jhukum")
+	tmt := c.Param("tmt")
+
+	result := db.Model(&model.RiwayatHukdis{}).Where("nip =? and jhukum = ? and tmt =? ", nip, jhukum, tmt).Scan(&riwayat_hukdis)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_hukdis,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatHukdis(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -99,10 +116,17 @@ func CreateRiwayatHukdis(c echo.Context) error {
 func UpdateRiwayatHukdis(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_hukdis model.RiwayatHukdis
+	//var riwayat_hukdis model.RiwayatHukdis
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_hukdis)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatHukdis `json:"refdata"`
+		Data model.RiwayatHukdis       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -111,15 +135,16 @@ func UpdateRiwayatHukdis(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_hukdis); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_hukdis.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatHukdis{}).Where("nip = ? and jhukum = ? and tmt = ?", riwayat_hukdis.Nip, riwayat_hukdis.Jhukum, riwayat_hukdis.Tmt).Updates(&riwayat_hukdis)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	Tmt := (reqData.Ref.Tmt).Format("2006-01-02")
+	result := db.Model(&model.RiwayatHukdis{}).Where("nip = ? and jhukum = ? and tmt = ?", reqData.Ref.Nip, reqData.Ref.Jhukum, Tmt).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -136,7 +161,7 @@ func UpdateRiwayatHukdis(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_hukdis,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

@@ -22,22 +22,23 @@ type DeleteRiwayatAngkaKredit struct {
 }
 
 type RiwayatAngkaKredit struct {
-	Nip       string     `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
-	Jns       string     `json:"jns"`
-	Kjab      string     `json:"kjab"`
-	JabatanFt JabatanFt  `gorm:"foreignKey:Kjab" json:"jabatan_ft"`
-	Tmulai    *time.Time `json:"tmulai" validate:"required"`
-	Tselesai  *time.Time `json:"tselesai"`
-	Utama     float64    `json:"utama"`
-	Tambahan  *float64   `json:"tambahan"`
-	Total     *float64   `json:"total"`
-	Nsk       *string    `json:"nsk"`
-	Tsk       *time.Time `json:"tsk"`
-	Thn       *string    `json:"thn"`
-	Filename  *string    `json:"filename"`
-	IdSync    *string    `gorm:"column:idSync" json:"idSync"`
-	CreatedBy string     `gorm:"<-:create" json:"created_by"`
-	CreatedAt *time.Time `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
-	UpdatedBy string     `gorm:"<-:update" json:"updated_by"`
-	UpdatedAt *time.Time `gorm:"<-:update" json:"updated_at"` // Automatically managed by GORM for update time
+	Nip            string         `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
+	Jns            string         `json:"jns"`
+	JenjangJabfung JenjangJabfung `gorm:"foreignKey:Jns" json:"jenjang_ft" validate:"-"`
+	Kjab           string         `json:"kjab"`
+	JabatanFt      JabatanFt      `gorm:"foreignKey:Kjab" json:"jabatan_ft" validate:"-"`
+	Tmulai         *time.Time     `json:"tmulai" validate:"required"`
+	Tselesai       *time.Time     `json:"tselesai"`
+	Utama          float64        `json:"utama"`
+	Tambahan       *float64       `json:"tambahan"`
+	Total          *float64       `json:"total"`
+	Nsk            *string        `json:"nsk"`
+	Tsk            *time.Time     `json:"tsk"`
+	Thn            *string        `json:"thn"`
+	Filename       *string        `json:"filename"`
+	IdSync         *string        `gorm:"column:idSync" json:"idSync"`
+	CreatedBy      string         `gorm:"<-:create" json:"created_by"`
+	CreatedAt      *time.Time     `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
+	UpdatedBy      string         `gorm:"<-:update" json:"updated_by"`
+	UpdatedAt      *time.Time     `gorm:"<-:update" json:"updated_at"` // Automatically managed by GORM for update time
 }

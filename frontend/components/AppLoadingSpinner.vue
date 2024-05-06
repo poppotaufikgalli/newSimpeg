@@ -28,7 +28,11 @@
 </script>
 
 <template>
-	<div id="loadingSpinner" class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none">
+	<button type="button" class="hidden" data-hs-overlay="#loadingSpinner">
+  	Open modal
+	</button>
+
+	<!--<div id="loadingSpinner" ref="loadingSpinner" class="hs-overlay size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none">
 	  <div class="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto min-h-[calc(100%-3.5rem)] flex items-center">
 	    <div class="w-full flex flex-col pointer-events-auto">
 	      <div class="p-4 overflow-y-auto mx-auto">
@@ -37,6 +41,11 @@
 					</div>
 	      </div>
 	    </div>
+	  </div>
+	</div>-->
+	<div id="loadingSpinner" ref="loadingSpinner" class="hs-overlay hidden size-full fixed top-0 start-0 z-[60] overflow-x-hidden overflow-y-auto pointer-events-none">
+	  <div class="hs-overlay-open:opacity-100 hs-overlay-open:duration-500 opacity-0 transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto">
+	    <div class="pointer-events-auto">&nbsp;</div>
 	  </div>
 	</div>
 </template>

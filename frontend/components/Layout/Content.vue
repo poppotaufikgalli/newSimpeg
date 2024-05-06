@@ -48,6 +48,8 @@ function search(){
 		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/">Beranda</NuxtLink>
 
 		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/pegawai">Pegawai</NuxtLink>
+		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/konfigurasi/group">Konfigurasi</NuxtLink>
+		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/referensi/opd">Referensi</NuxtLink>
 
 		            <div class="hs-dropdown [--strategy:static] md:[--strategy:absolute] [--adaptive:none] md:[--trigger:hover] py-3 md:py-6">
 								  <button type="button" class="flex items-center w-full text-gray-800 hover:text-gray-600 font-medium">
@@ -203,10 +205,12 @@ function search(){
 		</header>
 		<!-- ========== END HEADER ========== -->
   	<div class="bg-gradient-to-r from-cyan-500 to-blue-500 h-36"></div>
-		<div class="w-full pt-5 px-4 sm:px-6 md:px-8">
-			<main class="p-md-4 max-w-[85rem] mx-auto -mt-32">
-				<slot />
-			</main>
-		</div>
+  	<GlobalSpinner>
+			<div class="w-full pt-5 px-4 sm:px-6 md:px-8">
+				<main class="p-md-4 max-w-[85rem] mx-auto bg">
+					<slot />
+				</main>
+			</div>
+		</GlobalSpinner>
 	</div>
 </template>

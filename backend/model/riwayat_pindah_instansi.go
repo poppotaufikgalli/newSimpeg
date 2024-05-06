@@ -25,9 +25,9 @@ type RiwayatPindahInstansi struct {
 	Nip                       string     `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
 	Eselon                    *string    `json:"eselon"`
 	InstansiIndukBaru         *string    `gorm:"column:instansiIndukBaru" json:"instansiIndukBaru"`
-	InstansiBaru              Instansi   `gorm:"foreignKey:instansiIndukBaru" json:"instansiBaru"`
+	InstansiBaru              Instansi   `gorm:"foreignKey:instansiIndukBaru" json:"instansiBaru" validate:"-"`
 	InstansiIndukLama         *string    `gorm:"column:instansiIndukLama" json:"instansiIndukLama"`
-	InstansiLama              Instansi   `gorm:"foreignKey:instansiIndukLama" json:"instansiLama"`
+	InstansiLama              Instansi   `gorm:"foreignKey:instansiIndukLama" json:"instansiLama" validate:"-"`
 	InstansiKerjaBaru         *string    `gorm:"column:instansiKerjaBaru" json:"instansiKerjaBaru"`
 	InstansiKerjaLama         *string    `gorm:"column:instansiKerjaLama" json:"instansiKerjaLama"`
 	JabatanFungsionalBaru     *string    `gorm:"column:jabatanFungsionalBaru" json:"jabatanFungsionalBaru"`
@@ -48,12 +48,12 @@ type RiwayatPindahInstansi struct {
 	SatuanKerjaLama           *string    `gorm:"column:satuanKerjaLama" json:"satuanKerjaLama"`
 	SkAsalNomor               *string    `gorm:"column:skAsalNomor" json:"skAsalNomor"`
 	SkAsalProvNomor           *string    `gorm:"column:skAsalProvNomor" json:"skAsalProvNomor"`
-	SkAsalProvTanggal         *string    `gorm:"column:skAsalProvTanggal" json:"skAsalProvTanggal"`
-	SkAsalTanggal             *string    `gorm:"column:skAsalTanggal" json:"skAsalTanggal"`
+	SkAsalProvTanggal         time.Time  `gorm:"column:skAsalProvTanggal" json:"skAsalProvTanggal"`
+	SkAsalTanggal             time.Time  `gorm:"column:skAsalTanggal" json:"skAsalTanggal"`
 	SkBknNomor                *string    `gorm:"column:skBknNomor" json:"skBknNomor"`
-	SkBknTanggal              *string    `gorm:"column:skBknTanggal" json:"skBknTanggal"`
+	SkBknTanggal              time.Time  `gorm:"column:skBknTanggal" json:"skBknTanggal"`
 	SkTujuanNomor             *string    `gorm:"column:skTujuanNomor" json:"skTujuanNomor"`
-	SkTujuanTanggal           *string    `gorm:"column:skTujuanTanggal" json:"skTujuanTanggal"`
+	SkTujuanTanggal           time.Time  `gorm:"column:skTujuanTanggal" json:"skTujuanTanggal"`
 	SkUsulNomor               *string    `gorm:"column:skUsulNomor" json:"skUsulNomor"`
 	SkUsulTanggal             *string    `gorm:"column:skUsulTanggal" json:"skUsulTanggal"`
 	TmtPi                     time.Time  `gorm:"column:tmtPi" json:"tmtPi" validate:"required"`

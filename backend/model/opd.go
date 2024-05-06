@@ -27,7 +27,7 @@ type DeleteOpd struct {
 type Opd struct {
 	Id                 string           `gorm:"primaryKey;autoIncrement:false" json:"id" validate:"required"`
 	ParentOpd          *string          `json:"parent_opd"`
-	Kunker             *string          `json:"kunker" validate:"required"`
+	Kunker             *string          `json:"kunker"`
 	Nama               string           `json:"nama" validate:"required"`
 	IdJabatan          *string          `json:"id_jabatan"`
 	NamaJabatan        *string          `json:"nama_jabatan"`
@@ -47,8 +47,9 @@ type Opd struct {
 	Disingkat          *string          `json:"disingkat"`
 	Peringkat          int              `json:"peringkat"`
 	IdUnorBkn          *string          `json:"id_unor_bkn"`
-	SubOpd             []Opd            `gorm:"foreignKey:ParentOpd" json:"sub_opd"`
-	ListFormasiJabatan []FormasiJabatan `gorm:"foreignKey:IdOpd" json:"formasi_jabatan"`
+	SubOpd             []Opd            `gorm:"foreignKey:ParentOpd" json:"sub_opd" validate:"-"`
+	ListFormasiJabatan []FormasiJabatan `gorm:"foreignKey:IdOpd" json:"formasi_jabatan" validate:"-"`
+	Eselon             Eselon           `gorm:"foreignKey:IdEselon" json:"eselon" validate:"-"`
 	CreatedBy          string           `gorm:"<-:create" json:"created_by"`
 	CreatedAt          *time.Time       `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
 	UpdatedBy          string           `gorm:"<-:update" json:"updated_by"`

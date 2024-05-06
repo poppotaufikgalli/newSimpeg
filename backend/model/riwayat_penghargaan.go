@@ -24,7 +24,7 @@ type DeleteRiwayatPenghargaan struct {
 type RiwayatPenghargaan struct {
 	Nip                string           `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
 	IdJenisPenghargaan *string          `json:"id_jenis_penghargaan"`
-	JenisPenghargaan   JenisPenghargaan `gorm:"foreignKey:IdJenisPenghargaan" json:"JenisPenghargaan"`
+	JenisPenghargaan   JenisPenghargaan `gorm:"foreignKey:IdJenisPenghargaan" json:"JenisPenghargaan" validate:"-"`
 	Nbintang           string           `json:"nbintang" validate:"required"`
 	Aoleh              *string          `json:"aoleh"`
 	Nsk                *string          `json:"nsk" validate:"required"`

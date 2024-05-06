@@ -52,6 +52,21 @@ func FindRiwayatPmk(c echo.Context) error {
 	})
 }
 
+func GetRiwayatPmkByNiptanggalAwal(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var riwayat_pmk model.RiwayatPmk
+	nip := c.Param("nip")
+	tanggalAwal := c.Param("tanggalAwal")
+
+	result := db.Model(&model.RiwayatPmk{}).Where("nip = ? and tanggalAwal = ?", nip, tanggalAwal).Scan(&riwayat_pmk)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_pmk,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatPmk(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -94,10 +109,16 @@ func CreateRiwayatPmk(c echo.Context) error {
 func UpdateRiwayatPmk(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_pmk model.RiwayatPmk
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_pmk)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatPmk `json:"refdata"`
+		Data model.RiwayatPmk       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -106,15 +127,16 @@ func UpdateRiwayatPmk(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_pmk); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_pmk.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatPmk{}).Where("nip = ? and tanggalAwal = ?", riwayat_pmk.Nip, riwayat_pmk.TanggalAwal).Updates(&riwayat_pmk)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	TanggalAwal := (reqData.Ref.TanggalAwal).Format("2006-01-02")
+	result := db.Model(&model.RiwayatPmk{}).Where("nip = ? and tanggalAwal = ?", reqData.Ref.Nip, TanggalAwal).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -131,7 +153,7 @@ func UpdateRiwayatPmk(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_pmk,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

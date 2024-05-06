@@ -15,7 +15,7 @@ import (
 func GetOPD(searchString model.SearchOpd) (opd []model.Opd, result *gorm.DB) {
 	db, _ := model.CreateCon()
 
-	result = db.Model(&model.Opd{}).Preload("SubOpd").Preload("ListFormasiJabatan")
+	result = db.Model(&model.Opd{}).Preload("SubOpd").Preload("ListFormasiJabatan").Preload("Eselon")
 
 	//nama
 	if searchString.Nama != "" {
@@ -88,6 +88,20 @@ func FindOPD(c echo.Context) error {
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 		"filter":     searchString,
+	})
+}
+
+func GetOPDbyId(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var opd model.Opd
+	id := c.Param("id")
+
+	result := db.Model(&model.Opd{}).Where("id = ?", id).Scan(&opd)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       opd,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
 	})
 }
 

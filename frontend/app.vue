@@ -1,8 +1,6 @@
 <script lang="ts" setup>
-//const { awesome } = useAppConfig()
 import { storeToRefs } from 'pinia'; // import storeToRefs helper hook from pinia
-import { useAuthStore } from '~/store/auth'; // import the auth store we just created
-const { islogin } = useAuthStore(); // use authenticateUser action from  auth store
+import { useModalStore } from '~/store/modalStore'; // import the auth store we just created
 
 onMounted(async() => {
   //await islogin();
@@ -16,5 +14,8 @@ onMounted(async() => {
       <NuxtPage />
     </NuxtLayout>
     <UNotifications />
+    <ShowModal />
+    <ShowModalUpload />
+    <ModalUploadDoc />
   </Body>
 </template>

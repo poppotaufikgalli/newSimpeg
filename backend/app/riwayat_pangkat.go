@@ -64,6 +64,94 @@ func FindRiwayatPangkat(c echo.Context) error {
 	})
 }
 
+func GetRiwayatPangkatByNip(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var pangkat []model.RiwayatPangkat
+	nip := c.Param("nip")
+
+	result := db.Model(&model.RiwayatPangkat{}).Preload("Pangkat").Preload("JenisKp").Order("kgolru desc").Where("nip = ?", nip).Scan(&pangkat)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       pangkat,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
+func GetRiwayatPangkatByNipByKgolru(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var pangkat model.RiwayatPangkat
+	nip := c.Param("nip")
+	kgolru := c.Param("kgolru")
+
+	result := db.Model(&model.RiwayatPangkat{}).Where("nip = ? and kgolru = ?", nip, kgolru).Scan(&pangkat)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       pangkat,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
+func GetRiwayatPangkatByNipByKgolruTmtpangKnpang(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var pangkat model.RiwayatPangkat
+	nip := c.Param("nip")
+	kgolru := c.Param("kgolru")
+	tmtpang := c.Param("tmtpang")
+	knpang := c.Param("knpang")
+
+	result := db.Model(&model.RiwayatPangkat{}).Where("nip = ? and kgolru = ? and tmtpang = ? and knpang = ?", nip, kgolru, tmtpang, knpang).Scan(&pangkat)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       pangkat,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
+func GetRiwayatPangkatByNipCPNS(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var pangkat model.RiwayatPangkat
+	nip := c.Param("nip")
+
+	result := db.Model(&model.RiwayatPangkat{}).Where("nip = ? and knpang = 211", nip).Scan(&pangkat)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       pangkat,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
+func GetRiwayatPangkatByNipPNS(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var pangkat model.RiwayatPangkat
+	nip := c.Param("nip")
+
+	result := db.Model(&model.RiwayatPangkat{}).Where("nip = ? and knpang = 212", nip).Scan(&pangkat)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       pangkat,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
+func GetRiwayatPangkatByNipAkhir(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var pangkat model.RiwayatPangkat
+	nip := c.Param("nip")
+
+	result := db.Model(&model.RiwayatPangkat{}).Where("nip = ? and akhir = 1", nip).Scan(&pangkat)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       pangkat,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatPangkat(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -106,10 +194,18 @@ func CreateRiwayatPangkat(c echo.Context) error {
 func UpdateRiwayatPangkat(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_pangkat model.RiwayatPangkat
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_pangkat)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatPangkat `json:"refdata"`
+		Data model.RiwayatPangkat       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	//var riwayat_pangkat model.RiwayatPangkat
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -118,15 +214,16 @@ func UpdateRiwayatPangkat(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_pangkat); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_pangkat.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatPangkat{}).Where("nip = ? and tmtpang = ? and kgolru = ? and knpang = ?", riwayat_pangkat.Nip, riwayat_pangkat.Tmtpang, riwayat_pangkat.Kgolru, riwayat_pangkat.Knpang).Updates(&riwayat_pangkat)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	Tmtpang := (reqData.Ref.Tmtpang).Format("2006-01-02")
+	result := db.Model(&model.RiwayatPangkat{}).Where("nip = ? and tmtpang = ? and kgolru = ? and knpang = ?", reqData.Ref.Nip, Tmtpang, reqData.Ref.Kgolru, reqData.Ref.Knpang).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -143,7 +240,7 @@ func UpdateRiwayatPangkat(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_pangkat,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

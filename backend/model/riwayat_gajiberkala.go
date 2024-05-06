@@ -1,6 +1,7 @@
 package model
 
 import (
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -33,8 +34,28 @@ type RiwayatGajiberkala struct {
 	Kpej      *int       `json:"kpej"`
 	IdOpd     *string    `json:"id_opd"  validate:"required"`
 	Nunker    *string    `json:"nunker"`
+	Akhir     *int       `json:"akhir"`
+	Filename  *string    `json:"filename"`
 	CreatedBy string     `gorm:"<-:create" json:"created_by"`
 	CreatedAt *time.Time `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
 	UpdatedBy string     `gorm:"<-:update" json:"updated_by"`
 	UpdatedAt *time.Time `gorm:"<-:update" json:"updated_at"` // Automatically managed by GORM for update time
+}
+
+func (u *RiwayatGajiberkala) BeforeCreate(tx *gorm.DB) (err error) {
+	//u.Akhir = uuid.New()
+
+	if *u.Akhir == 1 {
+		//err = errors.New("can't save invalid data")
+		tx.Model(&RiwayatGajiberkala{}).Where("nip = ?", u.Nip).Update("akhir", 0)
+	}
+	return
+}
+
+func (u *RiwayatGajiberkala) AfterUpdate(tx *gorm.DB) (err error) {
+	if *u.Akhir == 1 {
+		Tmtngaj := (u.Tmtngaj).Format("2006-01-02")
+		tx.Model(&RiwayatGajiberkala{}).Where("nip = ? and tmtngaj <> ?", u.Nip, Tmtngaj).Update("akhir", 0)
+	}
+	return
 }

@@ -59,6 +59,24 @@ func FindRiwayatPenghargaan(c echo.Context) error {
 	})
 }
 
+func GetRiwayatPenghargaanByNipIdNsk(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_penghargaan model.RiwayatPenghargaan
+
+	nip := c.Param("nip")
+	nbintang := c.Param("nbintang")
+	nsk := c.Param("nsk")
+
+	result := db.Model(&model.RiwayatPenghargaan{}).Where("nip =? and nbintang = ? and nsk = ?", nip, nbintang, nsk).Scan(&riwayat_penghargaan)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_penghargaan,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatPenghargaan(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -101,10 +119,17 @@ func CreateRiwayatPenghargaan(c echo.Context) error {
 func UpdateRiwayatPenghargaan(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_penghargaan model.RiwayatPenghargaan
+	//var riwayat_penghargaan model.RiwayatPenghargaan
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_penghargaan)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatPenghargaan `json:"refdata"`
+		Data model.RiwayatPenghargaan       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -113,15 +138,15 @@ func UpdateRiwayatPenghargaan(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_penghargaan); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_penghargaan.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatPenghargaan{}).Where("nip = ? and nbintang = ? and nsk = ?", riwayat_penghargaan.Nip, riwayat_penghargaan.Nbintang, riwayat_penghargaan.Nsk).Updates(&riwayat_penghargaan)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	result := db.Model(&model.RiwayatPenghargaan{}).Where("nip = ? and nbintang = ? and nsk = ?", reqData.Ref.Nip, reqData.Ref.Nbintang, reqData.Ref.Nsk).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -138,7 +163,7 @@ func UpdateRiwayatPenghargaan(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_penghargaan,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

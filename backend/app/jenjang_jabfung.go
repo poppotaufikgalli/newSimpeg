@@ -29,7 +29,7 @@ func GetJenjangJabfung(searchString model.SearchJenjangJabfung) (jenjang_jabfung
 		result = result.Where("master_jenjang_jabfung.nama LIKE ?", strings.Join(str, ""))
 	}
 
-	result = result.Find(&jenjang_jabfung)
+	result = result.Order("urut").Find(&jenjang_jabfung)
 
 	return
 }

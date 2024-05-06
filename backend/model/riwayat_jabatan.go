@@ -1,6 +1,7 @@
 package model
 
 import (
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type SearchRiwayatJabatan struct {
 	Tmtjab        time.Time `json:"tmtjab,omitempty"`
 	Kjab          string    `json:"kjab,omitempty"`
 	KjabBkn       string    `json:"kjab_bkn,omitempty"`
+	Jnsjab        string    `json:"jnsjab"`
 	Keselon       []float64 `json:"keselon,omitempty"`
 	Nskjabat      string    `json:"nskjabat,omitempty"`
 	IdOpd         string    `json:"id_opd,omitempty"`
@@ -33,7 +35,7 @@ type RiwayatJabatan struct {
 	KjabBkn        *string    `json:"kjab_bkn"`
 	Jnsjab         string     `json:"jnsjab"`
 	Keselon        float64    `json:"keselon"`
-	Eselon         Eselon     `gorm:"foreignKey:Keselon" json:"eselon"`
+	Eselon         Eselon     `gorm:"foreignKey:Keselon" json:"eselon" validate:"-"`
 	Njab           *string    `json:"njab"`
 	Sjab           *float64   `json:"sjab"`
 	Nunker         string     `json:"nunker"`
@@ -46,7 +48,7 @@ type RiwayatJabatan struct {
 	NamaInstansi   *string    `json:"nama_instansi"`
 	IdOpd          *string    `json:"id_opd" validate:"required"`
 	IdSubOpd       *string    `json:"id_sub_opd"`
-	Akhir          int        `json:"akhir"`
+	Akhir          *int       `json:"akhir"`
 	TugasTambahan  *string    `json:"tugas_tambahan"`
 	NjabTambahan   *string    `json:"njab_tambahan"`
 	KjabTambahan   *string    `json:"kjab_tambahan"`
@@ -61,4 +63,22 @@ type RiwayatJabatan struct {
 	CreatedAt      *time.Time `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
 	UpdatedBy      string     `gorm:"<-:update" json:"updated_by"`
 	UpdatedAt      *time.Time `gorm:"<-:update" json:"updated_at"` // Automatically managed by GORM for update time
+}
+
+func (u *RiwayatJabatan) BeforeCreate(tx *gorm.DB) (err error) {
+	//u.Akhir = uuid.New()
+
+	if *u.Akhir == 1 {
+		//err = errors.New("can't save invalid data")
+		tx.Model(&RiwayatJabatan{}).Where("nip = ?", u.Nip).Update("akhir", 0)
+	}
+	return
+}
+
+func (u *RiwayatJabatan) AfterUpdate(tx *gorm.DB) (err error) {
+	if *u.Akhir == 1 {
+		Tmtjab := (u.Tmtjab).Format("2006-01-02")
+		tx.Model(&RiwayatJabatan{}).Where("nip = ? and tmtjab <> ?", u.Nip, Tmtjab).Update("akhir", 0)
+	}
+	return
 }

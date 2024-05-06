@@ -54,6 +54,20 @@ func FindCpns(c echo.Context) error {
 	})
 }
 
+func GetCpnsByNip(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var cpns model.Cpns
+	nip := c.Param("nip")
+
+	result := db.Model(&model.Cpns{}).Where("nip = ?", nip).Scan(&cpns)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       cpns,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateCpns(c echo.Context) error {
 	db, _ := model.CreateCon()
 

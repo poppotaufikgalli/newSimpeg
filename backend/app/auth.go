@@ -88,11 +88,13 @@ func Login(c echo.Context) error {
 	ret.Datauser.ExpiresAt = &expires_at
 	ret.Datauser.TokenId = token_id
 
-	ret.Datauser = saveloginInfo(ret.Datauser)
+	var isAdmin int64
+	ret.Datauser, isAdmin = saveloginInfo(ret.Datauser)
 
 	return c.JSON(http.StatusOK, echo.Map{
 		"token":      t,
 		"datauser":   ret.Datauser,
+		"is_admin":   isAdmin,
 		"statucCode": http.StatusOK,
 	})
 }
@@ -149,7 +151,7 @@ func AuthorizeRequest(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func saveloginInfo(dtuser model.UsersToken) model.UsersToken {
+func saveloginInfo(dtuser model.UsersToken) (model.UsersToken, int64) {
 	db, _ := model.CreateCon()
 
 	db.Model(&model.UsersToken{}).Clauses(clause.Returning{}, clause.OnConflict{
@@ -163,7 +165,12 @@ func saveloginInfo(dtuser model.UsersToken) model.UsersToken {
 		}),
 	}).Create(&dtuser)
 
-	return dtuser
+	var user model.Users
+	result := db.Model(&model.Users{}).Where("nip = ? and stts = ?", dtuser.Nip, 1).First(&user)
+
+	douser := dtuser
+
+	return douser, result.RowsAffected
 }
 
 func siapLogin(c echo.Context) (res model.SIAPResponse, err error) {
@@ -190,8 +197,6 @@ func siapLogin(c echo.Context) (res model.SIAPResponse, err error) {
 	req.Header["token"] = []string{SIAP_REST_API_TOKEN}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
-	//log.Println(req.Header)
-
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
@@ -207,4 +212,62 @@ func siapLogin(c echo.Context) (res model.SIAPResponse, err error) {
 	}
 
 	return
+}
+
+func FakeLogin(c echo.Context) error {
+	/*ret := &model.SIAPResponse{
+		Message:     "",
+		Success:     true,
+		LoginStatus: true,
+		Datauser: model.UsersToken{
+			Nip:       "198602162008031001",
+			Nama:      "Muhammad Taufik Hidayat",
+			IdOpd:     "125",
+			ParentOpd: "125",
+		},
+	}*/
+
+	token_id := uuid.New().String()
+	expires_at := time.Now().Add(time.Hour * 24)
+
+	fmt.Println(token_id, expires_at)
+
+	// Set custom claims
+	/*claims := &JwtCustomClaims{
+		"198602162008031001",
+		token_id,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expires_at),
+		},
+	}
+
+	// Create token with claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Generate encoded token and send it as response.
+	t, err := token.SignedString([]byte("simpeg2023"))
+	if err != nil {
+		return err
+	}
+
+	ti := time.Now()
+	ret.Datauser.LoginAt = &ti
+	ret.Datauser.ExpiresAt = &expires_at
+	ret.Datauser.TokenId = token_id
+
+	var isAdmin int64
+	ret.Datauser, isAdmin = saveloginInfo(ret.Datauser)*/
+
+	return c.JSON(http.StatusOK, echo.Map{
+
+		"datauser": map[string]interface{}{
+			"nip":        "198602162008031001",
+			"nama":       "Muhammad Taufik Hidayat",
+			"id_opd":     "125",
+			"parent_opd": "125",
+			"token_id":   token_id,
+		},
+		"is_admin":   1,
+		"statucCode": http.StatusOK,
+	})
 }

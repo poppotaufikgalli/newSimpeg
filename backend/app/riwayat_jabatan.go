@@ -37,6 +37,11 @@ func GetRiwayatJabatan(searchString model.SearchRiwayatJabatan) (riwayat_jabatan
 		result = result.Where("master_riwayat_jabatan.kjab_bkn = ?", searchString.KjabBkn)
 	}
 
+	//kjab bkn
+	if searchString.Jnsjab != "" {
+		result = result.Where("master_riwayat_jabatan.jnsjab = ?", searchString.Jnsjab)
+	}
+
 	//Keselon
 	if len(searchString.Keselon) > 0 {
 		result = result.Where("master_riwayat_jabatan.keselon IN (?)", searchString.Keselon)
@@ -89,6 +94,49 @@ func FindRiwayatJabatan(c echo.Context) error {
 	})
 }
 
+func GetRiwayatJabatanByNip(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var riwayat_jabatan model.RiwayatJabatan
+	nip := c.Param("nip")
+
+	result := db.Model(&model.RiwayatJabatan{}).Where("nip = ?", nip).Scan(&riwayat_jabatan)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_jabatan,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
+func GetRiwayatJabatanByNipAkhir(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var riwayat_jabatan model.RiwayatJabatan
+	nip := c.Param("nip")
+
+	result := db.Model(&model.RiwayatJabatan{}).Debug().Where("nip = ? and akhir = 1", nip).Scan(&riwayat_jabatan)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_jabatan,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
+func GetRiwayatJabatanByNipTmtjab(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var riwayat_jabatan model.RiwayatJabatan
+	nip := c.Param("nip")
+	tmtjab := c.Param("tmtjab")
+
+	result := db.Model(&model.RiwayatJabatan{}).Debug().Where("nip = ? and tmtjab = ?", nip, tmtjab).Scan(&riwayat_jabatan)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_jabatan,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatJabatan(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -131,10 +179,17 @@ func CreateRiwayatJabatan(c echo.Context) error {
 func UpdateRiwayatJabatan(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_jabatan model.RiwayatJabatan
+	//var riwayat_jabatan model.RiwayatJabatan
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_jabatan)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatJabatan `json:"refdata"`
+		Data model.RiwayatJabatan       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -143,15 +198,16 @@ func UpdateRiwayatJabatan(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_jabatan); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_jabatan.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatJabatan{}).Where("nip = ? and tmtjab = ?", riwayat_jabatan.Nip, riwayat_jabatan.Tmtjab).Updates(&riwayat_jabatan)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	Tmtjab := (reqData.Ref.Tmtjab).Format("2006-01-02")
+	result := db.Model(&model.RiwayatJabatan{}).Where("nip = ? and tmtjab = ?", reqData.Ref.Nip, Tmtjab).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -168,7 +224,7 @@ func UpdateRiwayatJabatan(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_jabatan,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

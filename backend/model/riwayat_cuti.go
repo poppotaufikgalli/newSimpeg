@@ -25,7 +25,7 @@ type DeleteRiwayatCuti struct {
 type RiwayatCuti struct {
 	Nip       string     `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
 	Kcuti     int        `json:"kcuti"`
-	JenisCuti JenisCuti  `gorm:"foreignKey:Kcuti" json:"JenisCuti"`
+	JenisCuti JenisCuti  `gorm:"foreignKey:Kcuti" json:"JenisCuti" validate:"-"`
 	Jcuti     string     `json:"jcuti"`
 	Nsk       string     `json:"nsk" validate:"required"`
 	Tsk       *time.Time `json:"tsk"`

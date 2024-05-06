@@ -29,6 +29,7 @@ export default defineNuxtConfig({
     },
   },
   ui: {
+    strategy: 'override',
     notifications: {
       // Show toasts at the top right of the screen
       position: 'top-0 bottom-auto'

@@ -39,13 +39,6 @@ const { pending: pendingRef, data, refresh: refreshDataRef } = await useLazyAsyn
 
 const { pending, data: dataPegawai, refresh: refreshDataPegawai } = await useAsyncData('getDataPegawai', () => CariData())
 
-//const selOpd = ref([])
-//const selSubOpd = ref([])
-//const selJJ = ref([])
-//const selEselon = ref([])
-//const selStatusPegawai = ref({1: true, 2: true, 11: true})
-//const selJenisPegawai = ref({10: true, 15: true, 20: true})
-
 const searchOpd = ref(null)
 const searchJJ = ref(null)
 const searchEselon = ref(null)
@@ -76,7 +69,9 @@ const sub_opds_utama = computed({
 	  		return o.id == searchOpd.value
 	  	})
 	  	if(result){
-	  		refSubOpd.value.reinit()
+	  		if(refSubOpd){
+	  			refSubOpd.value.reinit()	
+	  		}
 	  	}
 	  	return result.sub_opd
 	  }
@@ -180,7 +175,7 @@ function formatNip(nip) {
 
 const router = useRouter()
 
-function EditData(nip){
+function EditData(nip, nama, file_bmp){
 	const snip = $encodeBase64(nip)
 	navigateTo({ path: '/pegawai/'+snip+'/DataInduk/identitas' })
 }
@@ -190,7 +185,7 @@ function EditData(nip){
 	<!-- Table Section -->
 	<div class="">
 		<!-- Card -->
-		<div class="flex flex-col">
+		<div class="flex flex-col mb-6">
 			<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
 				<!-- Header -->
 				<div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200">
@@ -262,31 +257,6 @@ function EditData(nip){
 			        		<SearchSelect2 v-if="!loading" ref="refStatusPegawai" id="statuspegawais" :options="statuspegawais" keyList="kstatus" namaList="nama" v-model="searchStatusPegawai" multiple="multiple" />
 			        	</div>
 
-						    <!--<div id="hs-dropdown-4" class="mx-1 sm:col-span-2 sm:mt-1 hs-dropdown relative sm:inline-flex [--auto-close:inside]">
-									<button id="hs-dropdown-ese" type="button" class="hs-dropdown-toggle py-2 px-4 inline-flex items-center justify-between gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none w-[100%]">
-										<span class="text-start truncate">Pilih</span>
-										<svg class="hs-dropdown-open:rotate-180 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-									</button>
-
-									<div class="hs-dropdown-menu w-100 transition-[opacity,margin] duration hs-dropdown-open:opacity-100 opacity-0 hidden z-10 bg-gray-400 shadow-md rounded-lg p-2" aria-labelledby="hs-dropdown-ese">
-										<div class="max-h-[400px] min-w-[100px] overflow-y-auto
-										  [&::-webkit-scrollbar]:w-2
-										  [&::-webkit-scrollbar-track]:bg-gray-100
-										  [&::-webkit-scrollbar-thumb]:bg-gray-300">
-											<template v-if="!pendingRef" v-for="(item, idx) in statuspegawais" :key="item.id">
-												<div class="relative flex items-start py-2 px-3 rounded-lg hover:bg-gray-100">
-											       	<div class="flex items-center h-5 mt-1">
-											         	<input :id="'kstatus-'+idx" name="kstatus" type="checkbox" class="shrink-0 border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none" @click="setStatusPegawai(item)" :checked="selStatusPegawai[item.kstatus]">
-											       	</div>
-											       	<label :for="'kstatus-'+idx" class="ms-3.5 w-full">
-											         	<span class="mt-1 block text-xs font-semibold text-gray-800">{{item.nama}}</span>
-											       	</label>
-											    </div>
-											</template>
-										</div>
-									</div>
-								</div>-->
-
 								<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
 			            Jenis Pegawai
 			          </label>
@@ -294,30 +264,6 @@ function EditData(nip){
 				        <div class="sm:col-span-5 px-1 my-auto">
 			        		<SearchSelect2 v-if="!loading" ref="refJenisPegawai" id="jenispegawais" :options="jenispegawais" keyList="id" namaList="nama" v-model="searchJenisPegawai" multiple="multiple" />
 			        	</div>
-				        <!--<div id="hs-dropdown-4" class="mx-1 sm:col-span-2 sm:mt-1 hs-dropdown relative sm:inline-flex [--auto-close:inside]">
-									<button id="hs-dropdown-ese" type="button" class="hs-dropdown-toggle py-2 px-4 inline-flex items-center justify-between gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none w-[100%]">
-										<span class="text-start truncate">Pilih</span>
-										<svg class="hs-dropdown-open:rotate-180 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-									</button>
-
-									<div class="hs-dropdown-menu w-100 transition-[opacity,margin] duration hs-dropdown-open:opacity-100 opacity-0 hidden z-10 bg-gray-400 shadow-md rounded-lg p-2" aria-labelledby="hs-dropdown-ese">
-										<div class="max-h-[400px] min-w-[100px] overflow-y-auto
-										  [&::-webkit-scrollbar]:w-2
-										  [&::-webkit-scrollbar-track]:bg-gray-100
-										  [&::-webkit-scrollbar-thumb]:bg-gray-300">
-											<template v-if="!pendingRef" v-for="(item, idx) in jenispegawais" :key="item.id">
-												<div class="relative flex items-start py-2 px-3 rounded-lg hover:bg-gray-100">
-											       	<div class="flex items-center h-5 mt-1">
-											         	<input :id="'kjpeg-'+idx" name="kjpeg" type="checkbox" class="shrink-0 border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none" @click="setJenisPegawai(item)" :checked="selJenisPegawai[item.id]">
-											       	</div>
-											       	<label :for="'kjpeg-'+idx" class="ms-3.5 w-full">
-											         	<span class="mt-1 block text-xs font-semibold text-gray-800">{{item.nama}}</span>
-											       	</label>
-											    </div>
-											</template>
-										</div>
-									</div>
-								</div>-->
 							</div>
 							<div class="grid sm:grid-cols-12 gap-1 pt-2 first:pt-0 last:pb-0 border-t first:border-transparent border-gray-200">
 								<label class="inline-block sm:col-span-1 whitespace-nowrap text-sm font-medium mt-2.5">
@@ -333,7 +279,7 @@ function EditData(nip){
 		          	</label>
 				        <!-- End Col -->
 				        <div class="mx-1 sm:col-span-5 sm:mt-1 relative sm:inline-flex">
-									<input type="search" class="py-2 px-4 mb-2 block w-full border border-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="searchNama">
+									<input type="search" class="py-2 px-4 mb-2 block w-full border border-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="searchNama" v-on:keyup.enter="CariData2">
 								</div>
 
 								<div class="mx-1 sm:col-span-5 sm:col-start-2 relative sm:inline-flex gap-2">
@@ -488,7 +434,7 @@ function EditData(nip){
 								{{data}}
 								<tbody class="divide-y divide-gray-200">
 									<template v-if="dataPegawai" v-for="(pegawai, idx) in paginate_pegawais" :key="idx">
-										<tr class="odd:bg-white even:bg-gray-100" @click="EditData(pegawai.nip)">
+										<tr class="odd:bg-white even:bg-gray-100" @click="EditData(pegawai.nip, pegawai.nama, pegawai.file_bmp)">
 											<td class="size-px p-1" style="vertical-align: top;">
 												<span class="flex justify-center text-xs px-3 py-0">{{idx+from+1}}</span>
 											</td>

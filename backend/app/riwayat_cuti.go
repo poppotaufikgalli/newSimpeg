@@ -64,6 +64,23 @@ func FindRiwayatCuti(c echo.Context) error {
 	})
 }
 
+func GetRiwayatCutiByNipNskTmulai(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_cuti model.RiwayatCuti
+	nip := c.Param("nip")
+	nsk := c.Param("nsk")
+	tmulai := c.Param("tmulai")
+
+	result := db.Model(&model.RiwayatCuti{}).Where("nip =? and nsk =? and tmulai =?", nip, nsk, tmulai).Scan(&riwayat_cuti)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_cuti,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatCuti(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -106,10 +123,17 @@ func CreateRiwayatCuti(c echo.Context) error {
 func UpdateRiwayatCuti(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_cuti model.RiwayatCuti
+	//var riwayat_cuti model.RiwayatCuti
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_cuti)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatCuti `json:"refdata"`
+		Data model.RiwayatCuti       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -118,15 +142,16 @@ func UpdateRiwayatCuti(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_cuti); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_cuti.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatCuti{}).Where("nip = ? and tmulai = ? and nsk = ?", riwayat_cuti.Nip, riwayat_cuti.Tmulai, riwayat_cuti.Nsk).Updates(&riwayat_cuti)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	Tmulai := (reqData.Ref.Tmulai).Format("2006-01-02")
+	result := db.Model(&model.RiwayatCuti{}).Debug().Where("nip = ? and tmulai = ? and nsk = ?", reqData.Ref.Nip, Tmulai, reqData.Ref.Nsk).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -143,7 +168,7 @@ func UpdateRiwayatCuti(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_cuti,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

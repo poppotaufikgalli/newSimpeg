@@ -57,6 +57,49 @@ func FindRiwayatGajiberkala(c echo.Context) error {
 	})
 }
 
+func GetRiwayatGajiBerkalaByNip(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var riwayat_gajiberkala model.RiwayatGajiberkala
+	nip := c.Param("nip")
+
+	result := db.Model(&model.RiwayatGajiberkala{}).Where("nip = ?", nip).Scan(&riwayat_gajiberkala)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_gajiberkala,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
+func GetRiwayatGajiBerkalaByNipAkhir(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var riwayat_gajiberkala model.RiwayatGajiberkala
+	nip := c.Param("nip")
+
+	result := db.Model(&model.RiwayatGajiberkala{}).Debug().Where("nip = ? and akhir = 1", nip).Scan(&riwayat_gajiberkala)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_gajiberkala,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
+func GetRiwayatGajiBerkalaByNipTmtngaj(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var riwayat_gajiberkala model.RiwayatGajiberkala
+	nip := c.Param("nip")
+	tmtngaj := c.Param("tmtngaj")
+
+	result := db.Model(&model.RiwayatGajiberkala{}).Debug().Where("nip = ? and tmtngaj = ?", nip, tmtngaj).Scan(&riwayat_gajiberkala)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_gajiberkala,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatGajiberkala(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -99,10 +142,17 @@ func CreateRiwayatGajiberkala(c echo.Context) error {
 func UpdateRiwayatGajiberkala(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_gajiberkala model.RiwayatGajiberkala
+	//var riwayat_gajiberkala model.RiwayatGajiberkala
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_gajiberkala)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatGajiberkala `json:"refdata"`
+		Data model.RiwayatGajiberkala       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -111,15 +161,16 @@ func UpdateRiwayatGajiberkala(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_gajiberkala); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_gajiberkala.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatGajiberkala{}).Where("nip = ? and tmtngaj = ? and id_opd = ?", riwayat_gajiberkala.Nip, riwayat_gajiberkala.Tmtngaj, riwayat_gajiberkala.IdOpd).Updates(&riwayat_gajiberkala)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	Tmtngaj := (reqData.Ref.Tmtngaj).Format("2006-01-02")
+	result := db.Model(&model.RiwayatGajiberkala{}).Where("nip = ? and tmtngaj = ?", reqData.Ref.Nip, Tmtngaj).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -136,7 +187,7 @@ func UpdateRiwayatGajiberkala(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_gajiberkala,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

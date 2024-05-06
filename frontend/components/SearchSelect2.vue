@@ -1,6 +1,6 @@
 <script setup>
 const emit = defineEmits(['update:modelValue']);
-const props = defineProps(['modelValue', 'options', 'keyList', 'namaList', 'id', 'multiple']);
+const props = defineProps(['modelValue', 'options', 'keyList', 'namaList', 'id', 'multiple', 'disabled']);
 
 onMounted(() => {
 	//console.log(`onMounted, ${props.id} - ${props.modelValue} - ${props.multiple}`)
@@ -51,13 +51,17 @@ const reinit = () => {
 }
 
 const readOptions = () => {
-	const el = HSSelect.getInstance('#'+props.id);
-	if(el){
-		el.recalculateDirection();	
-	}
+	return props.options[0][props.namaList]
 }
 
 defineExpose({reinit, readOptions});
+
+function truncating(text){
+	if(text.length > 5){
+		return text.slice(0,5)+'...'
+	}
+	return text
+}
 
 </script>
 <template>
@@ -71,7 +75,7 @@ defineExpose({reinit, readOptions});
 				  "optionClasses": "py-2 px-4 w-full text-sm text-gray-800 cursor-pointer hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100",
 				  "optionTemplate": "<div class=\"flex justify-between items-center w-full\"><span data-title></span><span class=\"hidden hs-selected:block\"><svg class=\"flex-shrink-0 size-3.5 text-blue-600\" xmlns=\"http:.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"/></svg></span></div>",
 				  "extraMarkup": "<div class=\"absolute top-1/2 end-3 -translate-y-1/2\"><svg class=\"flex-shrink-0 size-3.5 text-gray-500\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m7 15 5 5 5-5\"/><path d=\"m7 9 5-5 5 5\"/></svg></div>"
-				}' class="hidden" :value="modelValue">
+				}' class="hidden" :value="modelValue" :disabled="disabled">
 		  			<option class="bg-white" v-for="(item, idx) in options" :key="idx" v-bind:value="item[keyList]">{{item[keyList]}}-{{item[namaList]}}</option>
 			</select>
 		</template>
@@ -88,9 +92,9 @@ defineExpose({reinit, readOptions});
 		  		"optionClasses": "py-2 px-4 w-full text-sm text-gray-800 cursor-pointer hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100",
 		  		"optionTemplate": "<div><div class=\"flex items-center\"><div class=\"me-2\" data-icon></div><div class=\"text-gray-800\" data-title></div></div></div>",
 		  		"extraMarkup": "<div class=\"absolute top-1/2 end-3 -translate-y-1/2\"><svg class=\"flex-shrink-0 size-3.5 text-gray-500\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m7 15 5 5 5-5\"/><path d=\"m7 9 5-5 5 5\"/></svg></div>"
-				}' class="hidden" :value="modelValue">
+				}' class="hidden" :value="modelValue" :disabled="disabled">
 		  			<option value="">Choose</option>
-		  			<option v-for="(item, idx) in options" :key="idx" :value="item[keyList]">{{item[keyList]}}-{{item[namaList]}}</option>
+		  			<option v-for="(item, idx) in options" :key="idx" :value="item[keyList]">{{truncating(item[keyList])}}-{{item[namaList]}}</option>
 			</select>
 		</template>
 	</div>

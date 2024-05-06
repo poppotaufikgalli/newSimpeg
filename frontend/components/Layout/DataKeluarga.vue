@@ -1,17 +1,19 @@
 <script setup>
 const route = useRoute()
 
-const { pending, data: jnsDiklat, refresh} = await useLazyAsyncData('getJenisKeluarga', () => CariData())
-
-const CariData = async() => {
+const { pending, data: jnsDiklat, refresh} = await useLazyAsyncData('getJenisKeluarga', async() => {
 		console.log("CariData Jenis Keluarga")
 
 		return await $fetch('/api/gets/jenis_keluarga');
-}
+});
+
+onMounted(() => {
+	refreshNuxtData(["getJenisKeluarga"])
+})
 </script>
 <style scoped>
 .router-link-active {
-  @apply border-e-2 border-blue-600 text-blue-600
+  @apply bg-blue-800 text-gray-200;
 }
 .router-link-active:hover {
   @apply font-medium;
@@ -20,17 +22,17 @@ const CariData = async() => {
 <template>
 	<div class="mx-auto">
 		<!-- Card -->
-		<div class="bg-white rounded-xl shadow p-4">
+		<div class="bg-white rounded-xl shadow p-4 mb-6">
 			<TopBarPegawai />
 			<div class="mt-5">
 				<div class="grid sm:grid-cols-12 gap-4">
 					<div class="sm:col-span-2">
 						<div class="flex flex-wrap">
 						  	<div class="w-full">
-						  		<nav class="-me-0.5 flex flex-col">
+						  		<nav class="-me-0.5 flex flex-col border divide-y rounded-md overflow-hidden">
 							    	<template v-if="jnsDiklat" v-for="(item, idx) in jnsDiklat" :key="idx">
-							    		<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:outline-none hover:text-blue-600 hover:bg-blue-200" 
-							    		:to="{ path: '/pegawai/form/DataKeluarga/'+item.id}">
+							    		<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" 
+							    		:to="{ path: `/pegawai/${snip}/DataKeluarga/${item.id}`}">
 							    	  	{{item.nama}}
 							    		</NuxtLink>	
 							    	</template>

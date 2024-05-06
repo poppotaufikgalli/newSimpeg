@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia'; // import storeToRefs helper hook from pinia
 import { useAuthStore } from '~/store/auth'; // import the auth store we just created
 
-const { authenticateUser, fakeauth } = useAuthStore(); // use authenticateUser action from  auth store
+const { authenticateUser, fakeauth, authenticateFakeUser } = useAuthStore(); // use authenticateUser action from  auth store
 const { authenticated, message } = storeToRefs(useAuthStore()); // make authenticated state reactive with storeToRefs
 
 definePageMeta({
@@ -38,19 +38,15 @@ const login = async() => {
 	}
 }
 
-const fakeLogin = () => {
+const fakeLogin = async() => {
 	showSpinner.value = true
-	fakeauth()
-	setTimeout(() => {
-      // callback function for timer, gets called after the time-delay
-      // Your timer is done now. Print a line for debugging and resolve myTimerPromise
-      console.log("2 seconds up, resolving myTimerPromise")
-      showSpinner.value = false
-
-      router.push('/')
-  }, 2000);  // This promise will be resolved in 2000 milli-seconds
-	
-	
+  await authenticateFakeUser(state.value); // call authenticateUser and pass the user object
+  showSpinner.value = false
+  if (authenticated.value) {
+    router.push('/');
+  }else{
+    errorToast(message)
+  }
 }
 
 const errorToast = (message) => {
@@ -108,7 +104,6 @@ const errorToast = (message) => {
                   <p class="hidden text-xs text-red-600 mt-2" id="password-error">8+ characters required</p>
                 </div>
                 <!-- End Form Group -->
-
                 <div class="mt-5">
                   <button type="submit" class="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">Log in</button>
                 </div>
@@ -120,5 +115,4 @@ const errorToast = (message) => {
       </div>
     </main>
   </div>
-	
 </template>

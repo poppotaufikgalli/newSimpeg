@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"time"
 
@@ -31,12 +32,32 @@ func (u *Pegawai) AfterFind(tx *gorm.DB) (err error) {
 		dur := age.CalculateToNow(*u.Tlahir)
 		u.Umur = dur // Set default role if not specified
 	}
+
+	if u.Gldepan == nil || len(*u.Gldepan) == 0 {
+		if u.Glblk == nil || len(*u.Glblk) == 0 {
+			u.Namapeg = u.Nama
+			fmt.Println("1")
+		} else {
+			fmt.Println("2")
+			u.Namapeg = fmt.Sprintf("%s, %s", u.Nama, *u.Glblk)
+		}
+	} else {
+		if u.Glblk == nil || len(*u.Glblk) == 0 {
+			fmt.Println("3")
+			u.Namapeg = fmt.Sprintf("%s. %s", *u.Gldepan, u.Nama)
+		} else {
+			fmt.Println("4")
+			u.Namapeg = fmt.Sprintf("%s. %s, %s", *u.Gldepan, u.Nama, *u.Glblk)
+		}
+	}
+
 	return
 }
 
 type Pegawai struct {
 	Nip               string           `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
 	Nama              string           `json:"nama" validate:"required"`
+	Namapeg           string           `gorm:"-" json:"namapeg"`
 	Gldepan           *string          `json:"gldepan"`
 	Glblk             *string          `json:"glblk"`
 	Ktlahir           *string          `json:"ktlahir"`
@@ -88,6 +109,7 @@ type Pegawai struct {
 	EmailPemerintahan *string          `json:"email_pemerintahan,omitempty" validate:"omitempty,email"`
 	RiwayatJabatan    []RiwayatJabatan `gorm:"foreignKey:Nip" json:"riwayat_jabatan" validate:"-"`
 	JabatanAkhir      RiwayatJabatan   `gorm:"foreignKey:Nip" json:"jabatan_akhir" validate:"-"`
+	PangkatAkhir      RiwayatPangkat   `gorm:"foreignKey:Nip" json:"pangkat_akhir" validate:"-"`
 	CreatedBy         string           `gorm:"<-:create" json:"created_by"`
 	CreatedAt         *time.Time       `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
 	UpdatedBy         string           `gorm:"<-:update" json:"updated_by"`

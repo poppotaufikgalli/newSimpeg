@@ -17,6 +17,21 @@ type DeleteSingkronisasi struct {
 	Id string `json:"id" validate:"required"`
 }
 
+type UpdateTokenSingkronisasi struct {
+	Type     string `json:"type" validate:"required"`
+	Ckey     string `json:"ckey,omitempty"`
+	Csecret  string `json:"csecret,omitempty"`
+	ClientId string `json:"client_id,omitempty"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
+type ResultTokenSso struct {
+	AccessToken  string  `json:"access_token"`
+	ExpiresIn    float64 `json:"expires_in"`
+	RefreshToken string  `json:"refresh_token"`
+}
+
 type Singkronisasi struct {
 	Id                     string     `gorm:"primaryKey;autoIncrement:true" json:"id"`
 	Host                   *string    `json:"host"`
@@ -27,9 +42,9 @@ type Singkronisasi struct {
 	Password               *string    `json:"password"`
 	ClientId               *string    `json:"client_id"`
 	GrantType              *string    `json:"grant_type"`
-	TokenSso               *string    `json:"token_sso"`
+	TokenSso               *string    `json:"-"`
 	TokenSsoExpired        *time.Time `json:"token_sso_expired"`
-	TokenApimanager        *string    `json:"token_apimanager"`
+	TokenApimanager        *string    `json:"-"`
 	TokenApimanagerExpired *time.Time `json:"token_apimanager_expired"`
 	Status                 *int       `json:"status"`
 	CreatedBy              string     `gorm:"<-:create" json:"created_by"`

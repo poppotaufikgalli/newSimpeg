@@ -24,7 +24,7 @@ type DeleteRiwayatHukdis struct {
 type RiwayatHukdis struct {
 	Nip         string      `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
 	Jhukum      string      `json:"jhukum" validate:"required"`
-	JenisHukdis JenisHukdis `gorm:"foreignKey:Jhukum" json:"JenisHukdis"`
+	JenisHukdis JenisHukdis `gorm:"foreignKey:Jhukum" json:"JenisHukdis" validate:"-"`
 	JhukumBkn   *string     `json:"jhukum_bkn"`
 	Deshukum    *string     `json:"deshukum"`
 	Nsk         *string     `json:"nsk"`

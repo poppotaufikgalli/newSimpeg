@@ -42,7 +42,7 @@ func GetRiwayatAngkaKredit(searchString model.SearchRiwayatAngkaKredit) (riwayat
 		result = result.Where("master_riwayat_angka_kredit.thn = ?", searchString.Thn)
 	}
 
-	result = result.Preload("JabatanFt").Find(&riwayat_angka_kredit)
+	result = result.Preload("JabatanFt").Preload("JenjangJabfung").Find(&riwayat_angka_kredit)
 
 	return
 
@@ -59,6 +59,23 @@ func FindRiwayatAngkaKredit(c echo.Context) error {
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 		"filter":     searchString,
+	})
+}
+
+func GetRiwayatAngkaKreditByNipTmulai(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_angka_kredit model.RiwayatAngkaKredit
+	nip := c.Param("nip")
+	tmulai := c.Param("tmulai")
+
+	//tmulai = (tmulai).Format("2006-01-02")
+	result := db.Model(&model.RiwayatAngkaKredit{}).Where("nip = ? and tmulai = ? ", nip, tmulai).Scan(&riwayat_angka_kredit)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_angka_kredit,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
 	})
 }
 
@@ -104,10 +121,17 @@ func CreateRiwayatAngkaKredit(c echo.Context) error {
 func UpdateRiwayatAngkaKredit(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_angka_kredit model.RiwayatAngkaKredit
+	//var riwayat_angka_kredit model.RiwayatAngkaKredit
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_angka_kredit)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatAngkaKredit `json:"refdata"`
+		Data model.RiwayatAngkaKredit       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -116,15 +140,16 @@ func UpdateRiwayatAngkaKredit(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_angka_kredit); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_angka_kredit.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatAngkaKredit{}).Where("nip = ? and tmulai = ?", riwayat_angka_kredit.Nip, riwayat_angka_kredit.Tmulai).Updates(&riwayat_angka_kredit)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	Tmulai := (reqData.Ref.Tmulai).Format("2006-01-02")
+	result := db.Model(&model.RiwayatAngkaKredit{}).Where("nip = ? and tmulai = ?", reqData.Ref.Nip, Tmulai).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -141,7 +166,7 @@ func UpdateRiwayatAngkaKredit(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_angka_kredit,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

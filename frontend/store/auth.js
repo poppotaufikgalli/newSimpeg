@@ -28,6 +28,25 @@ export const useAuthStore = defineStore("auth", {
         this.authenticated = true // set authenticated  state value to true  
       }
     },
+    async authenticateFakeUser({username, password}) {
+      const {data, token, error, pending, refresh, status} = await $fetch("api/fakelogin", {
+        method: "POST",
+        body: {
+          username: username,
+          password: password,
+        },
+      });
+
+      this.loading = pending;
+      this.message = data.message || "Username atau Password Anda Salah";
+
+      if (status == 200) {
+        const token = useCookie("token") // useCookie new hook in nuxt 3
+        token.value = data?.token // set token to cookie
+        this.userInfo = data?.datauser
+        this.authenticated = true // set authenticated  state value to true  
+      }
+    },
     async islogin(){
       const {datauser, statucCode} = await $fetch("api/islogin");
       //console.log(statucCode)

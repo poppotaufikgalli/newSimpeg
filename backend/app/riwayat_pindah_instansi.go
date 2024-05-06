@@ -66,6 +66,22 @@ func FindRiwayatPindahInstansi(c echo.Context) error {
 	})
 }
 
+func GetRiwayatPindahInstansiByNipTmtPi(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_pindah_instansi model.RiwayatPindahInstansi
+	nip := c.Param("nip")
+	tmtPi := c.Param("tmtPi")
+
+	result := db.Model(&model.RiwayatPindahInstansi{}).Where("nip = ? and tmtPi = ?", nip, tmtPi).Scan(&riwayat_pindah_instansi)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_pindah_instansi,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatPindahInstansi(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -108,10 +124,17 @@ func CreateRiwayatPindahInstansi(c echo.Context) error {
 func UpdateRiwayatPindahInstansi(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_pindah_instansi model.RiwayatPindahInstansi
+	//var riwayat_pindah_instansi model.RiwayatPindahInstansi
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_pindah_instansi)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatPindahInstansi `json:"refdata"`
+		Data model.RiwayatPindahInstansi       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -120,15 +143,16 @@ func UpdateRiwayatPindahInstansi(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_pindah_instansi); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_pindah_instansi.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatPindahInstansi{}).Where("nip = ? and tmtPi = ?", riwayat_pindah_instansi.Nip, riwayat_pindah_instansi.TmtPi).Updates(&riwayat_pindah_instansi)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	TmtPi := (reqData.Ref.TmtPi).Format("2006-01-02")
+	result := db.Model(&model.RiwayatPindahInstansi{}).Debug().Where("nip = ? and tmtPi = ?", reqData.Ref.Nip, TmtPi).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -145,7 +169,7 @@ func UpdateRiwayatPindahInstansi(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_pindah_instansi,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

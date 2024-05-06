@@ -1,6 +1,7 @@
 package model
 
 import (
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -41,4 +42,20 @@ type RiwayatTugasTambahan struct {
 	CreatedAt *time.Time `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
 	UpdatedBy string     `gorm:"<-:update" json:"updated_by"`
 	UpdatedAt *time.Time `gorm:"<-:update" json:"updated_at"` // Automatically managed by GORM for update time
+}
+
+func (u *RiwayatTugasTambahan) BeforeCreate(tx *gorm.DB) (err error) {
+	if *u.Status == 1 {
+		//err = errors.New("can't save invalid data")
+		tx.Model(&RiwayatTugasTambahan{}).Where("nip = ?", u.Nip).Update("status", 0)
+	}
+	return
+}
+
+func (u *RiwayatTugasTambahan) AfterUpdate(tx *gorm.DB) (err error) {
+	if *u.Status == 1 {
+		Tmtjab := (u.Tmtjab).Format("2006-01-02")
+		tx.Model(&RiwayatTugasTambahan{}).Where("nip = ? and tmtjab <> ?", u.Nip, Tmtjab).Update("status", 0)
+	}
+	return
 }

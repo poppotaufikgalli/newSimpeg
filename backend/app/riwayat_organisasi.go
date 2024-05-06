@@ -56,6 +56,23 @@ func FindRiwayatOrganisasi(c echo.Context) error {
 	})
 }
 
+func GetRiwayatOrganisasiByNipNorgJborg(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_organisasi model.RiwayatOrganisasi
+	nip := c.Param("nip")
+	norg := c.Param("norg")
+	jborg := c.Param("jborg")
+
+	result := db.Model(&model.RiwayatOrganisasi{}).Where("nip =? and norg =? and jborg =? ", nip, norg, jborg).Scan(&riwayat_organisasi)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_organisasi,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatOrganisasi(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -98,10 +115,17 @@ func CreateRiwayatOrganisasi(c echo.Context) error {
 func UpdateRiwayatOrganisasi(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_organisasi model.RiwayatOrganisasi
+	//var riwayat_organisasi model.RiwayatOrganisasi
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_organisasi)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatOrganisasi `json:"refdata"`
+		Data model.RiwayatOrganisasi       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -110,15 +134,15 @@ func UpdateRiwayatOrganisasi(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_organisasi); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_organisasi.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatOrganisasi{}).Where("nip = ? and norg = ? and jborg = ?", riwayat_organisasi.Nip, riwayat_organisasi.Norg, riwayat_organisasi.Jborg).Updates(&riwayat_organisasi)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	result := db.Model(&model.RiwayatOrganisasi{}).Where("nip = ? and norg = ? and jborg = ?", reqData.Ref.Nip, reqData.Ref.Norg, reqData.Ref.Jborg).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -135,7 +159,7 @@ func UpdateRiwayatOrganisasi(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_organisasi,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

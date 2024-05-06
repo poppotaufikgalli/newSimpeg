@@ -57,6 +57,23 @@ func FindRiwayatP2kp(c echo.Context) error {
 	})
 }
 
+func GetRiwayatP2kpByNipThnTmulai(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_p2kp model.RiwayatP2kp
+	nip := c.Param("nip")
+	thnilai := c.Param("thnilai")
+	tmulai := c.Param("tmulai")
+
+	result := db.Model(&model.RiwayatP2kp{}).Where("nip = ? and thnilai = ? and tmulai = ?", nip, thnilai, tmulai).Scan(&riwayat_p2kp)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_p2kp,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatP2kp(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -99,10 +116,17 @@ func CreateRiwayatP2kp(c echo.Context) error {
 func UpdateRiwayatP2kp(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_p2kp model.RiwayatP2kp
+	//var riwayat_p2kp model.RiwayatP2kp
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_p2kp)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatP2kp `json:"refdata"`
+		Data model.RiwayatP2kp       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -111,15 +135,17 @@ func UpdateRiwayatP2kp(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_p2kp); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_p2kp.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatP2kp{}).Where("nip = ? and thnilai = ? and tmulai = ? and tselesai = ?", riwayat_p2kp.Nip, riwayat_p2kp.Thnilai, riwayat_p2kp.Tmulai, riwayat_p2kp.Tselesai).Updates(&riwayat_p2kp)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	Tmulai := (reqData.Ref.Tmulai).Format("2006-01-02")
+	Tselesai := (reqData.Ref.Tselesai).Format("2006-01-02")
+	result := db.Model(&model.RiwayatP2kp{}).Where("nip = ? and thnilai = ? and tmulai = ? and tselesai = ?", reqData.Ref.Nip, reqData.Ref.Thnilai, Tmulai, Tselesai).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -136,7 +162,7 @@ func UpdateRiwayatP2kp(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_p2kp,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

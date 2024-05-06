@@ -57,6 +57,22 @@ func FindRiwayatBahasa(c echo.Context) error {
 	})
 }
 
+func GetRiwayatBahasaByNipNbahasa(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_bahasa model.RiwayatBahasa
+	nip := c.Param("nip")
+	nbahasa := c.Param("nbahasa")
+
+	result := db.Model(&model.RiwayatBahasa{}).Where("nip =? and nbahasa =? ", nip, nbahasa).Scan(&riwayat_bahasa)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_bahasa,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatBahasa(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -99,10 +115,17 @@ func CreateRiwayatBahasa(c echo.Context) error {
 func UpdateRiwayatBahasa(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_bahasa model.RiwayatBahasa
+	//var riwayat_bahasa model.RiwayatBahasa
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_bahasa)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatBahasa `json:"refdata"`
+		Data model.RiwayatBahasa       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -111,15 +134,15 @@ func UpdateRiwayatBahasa(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_bahasa); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_bahasa.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatBahasa{}).Where("nip = ? and nbahasa = ?", riwayat_bahasa.Nip, riwayat_bahasa.Nbahasa).Updates(&riwayat_bahasa)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	result := db.Model(&model.RiwayatBahasa{}).Where("nip = ? and nbahasa = ?", reqData.Ref.Nip, reqData.Ref.Nbahasa).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -136,7 +159,7 @@ func UpdateRiwayatBahasa(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_bahasa,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

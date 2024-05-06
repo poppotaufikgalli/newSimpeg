@@ -24,7 +24,7 @@ type DeleteRiwayatStlud struct {
 type RiwayatStlud struct {
 	Nip           string     `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
 	Kstlud        int        `json:"kstlud" validate:"required"`
-	Stlud         Stlud      `gorm:"foreignKey:Kstlud;references:kstlud" json:"stlud"`
+	Stlud         Stlud      `gorm:"foreignKey:Kstlud;references:kstlud" json:"stlud" validate:"-"`
 	Nostlud       *string    `json:"nostlud"`
 	Tstlud        time.Time  `json:"tstlud" validate:"required"`
 	Nilai         *float64   `json:"nilai"`
