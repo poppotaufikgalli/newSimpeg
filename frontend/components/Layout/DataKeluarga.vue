@@ -1,5 +1,6 @@
 <script setup>
 const route = useRoute()
+const {snip} = route.params
 
 const { pending, data: jnsDiklat, refresh} = await useLazyAsyncData('getJenisKeluarga', async() => {
 		console.log("CariData Jenis Keluarga")

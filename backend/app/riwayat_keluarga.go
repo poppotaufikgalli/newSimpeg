@@ -15,7 +15,7 @@ import (
 func GetRiwayatKeluarga(searchString model.SearchRiwayatKeluarga) (riwayat_keluarga []model.RiwayatKeluarga, result *gorm.DB) {
 	db, _ := model.CreateCon()
 
-	result = db.Model(&model.RiwayatKeluarga{})
+	result = db.Model(&model.RiwayatKeluarga{}).Preload("Pekerjaan")
 
 	//nip
 	if searchString.Nip != "" {
@@ -34,7 +34,7 @@ func GetRiwayatKeluarga(searchString model.SearchRiwayatKeluarga) (riwayat_kelua
 		result = result.Where("master_riwayat_keluarga.nama_kel LIKE ?", strings.Join(str, ""))
 	}
 
-	result = result.Preload("Pekerjaan").Find(&riwayat_keluarga)
+	result = result.Find(&riwayat_keluarga)
 
 	return
 
@@ -51,6 +51,23 @@ func FindRiwayatKeluarga(c echo.Context) error {
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 		"filter":     searchString,
+	})
+}
+
+func GetRiwayatKeluargaByNipJkeluargaNamakel(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_keluarga model.RiwayatKeluarga
+	nip := c.Param("nip")
+	jkeluarga := c.Param("jkeluarga")
+	nama_kel := c.Param("nama_kel")
+
+	result := db.Model(&model.RiwayatKeluarga{}).Where("nip =? and jkeluarga=? and nama_kel=?", nip, jkeluarga, nama_kel).Scan(&riwayat_keluarga)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_keluarga,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
 	})
 }
 
@@ -96,10 +113,17 @@ func CreateRiwayatKeluarga(c echo.Context) error {
 func UpdateRiwayatKeluarga(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_keluarga model.RiwayatKeluarga
+	//var riwayat_keluarga model.RiwayatKeluarga
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_keluarga)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatKeluarga `json:"refdata"`
+		Data model.RiwayatKeluarga       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -108,15 +132,15 @@ func UpdateRiwayatKeluarga(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_keluarga); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_keluarga.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatKeluarga{}).Where("nip = ? and jkeluarga = ? and nama_kel = ?", riwayat_keluarga.Nip, riwayat_keluarga.Jkeluarga, riwayat_keluarga.NamaKel).Updates(&riwayat_keluarga)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	result := db.Model(&model.RiwayatKeluarga{}).Where("nip = ? and jkeluarga = ? and nama_kel = ?", reqData.Ref.Nip, reqData.Ref.Jkeluarga, reqData.Ref.NamaKel).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -133,7 +157,7 @@ func UpdateRiwayatKeluarga(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_keluarga,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

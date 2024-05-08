@@ -15,7 +15,7 @@ import (
 func GetPendidikan(searchString model.SearchPendidikan) (pendidikan []model.Pendidikan, result *gorm.DB) {
 	db, _ := model.CreateCon()
 
-	result = db.Model(&model.Pendidikan{})
+	result = db.Model(&model.Pendidikan{}).Debug()
 
 	//id
 	if searchString.Id != "" {
@@ -28,8 +28,8 @@ func GetPendidikan(searchString model.SearchPendidikan) (pendidikan []model.Pend
 	}
 
 	//tk pendidikan id
-	if searchString.TkPendidikanId != "" {
-		result = result.Where("master_pendidikan.tk_pendidikan_id = ?", searchString.TkPendidikanId)
+	if len(searchString.TkPendidikanId) > 0 {
+		result = result.Where("master_pendidikan.tk_pendidikan_id IN (?)", searchString.TkPendidikanId)
 	}
 
 	//nama

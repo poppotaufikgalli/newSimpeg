@@ -745,6 +745,66 @@ func UploadTugasLn(c echo.Context) error {
 	})
 }
 
+func UploadPendum(c echo.Context) error {
+	nip := c.Param("nip")
+	ktpu := c.FormValue("ktpu")
+	kjur := c.FormValue("kjur")
+
+	filename, newpath, _ := doUpload(c)
+
+	if nip != "" {
+		db, _ := model.CreateCon()
+		result := db.Model(&model.RiwayatPendum{}).Where("nip = ? and ktpu = ? and kjur =?", nip, ktpu, kjur).Update("filename", filename)
+
+		if result.Error != nil {
+			return c.JSON(http.StatusBadRequest, result.Error.Error())
+		}
+
+		if result.RowsAffected == 0 {
+			return c.JSON(http.StatusNotFound, map[string]interface{}{
+				"statucCode": http.StatusNotFound,
+				"errors":     "Data Not Found",
+			})
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"filename":   filename,
+		"path":       newpath,
+		"statucCode": http.StatusOK,
+	})
+}
+
+func UploadDiklat(c echo.Context) error {
+	nip := c.Param("nip")
+	jdiklat := c.FormValue("jdiklat")
+	tmulai := c.FormValue("tmulai")
+
+	filename, newpath, _ := doUpload(c)
+
+	if nip != "" {
+		db, _ := model.CreateCon()
+		result := db.Model(&model.RiwayatDiklat{}).Where("nip = ? and jdiklat = ? and tmulai =?", nip, jdiklat, tmulai).Update("filename", filename)
+
+		if result.Error != nil {
+			return c.JSON(http.StatusBadRequest, result.Error.Error())
+		}
+
+		if result.RowsAffected == 0 {
+			return c.JSON(http.StatusNotFound, map[string]interface{}{
+				"statucCode": http.StatusNotFound,
+				"errors":     "Data Not Found",
+			})
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"filename":   filename,
+		"path":       newpath,
+		"statucCode": http.StatusOK,
+	})
+}
+
 func doUpload(c echo.Context) (filename, newpath string, err error) {
 	filename = c.FormValue("filename")
 	path := c.FormValue("path")

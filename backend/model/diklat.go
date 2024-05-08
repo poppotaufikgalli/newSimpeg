@@ -11,7 +11,7 @@ func (Diklat) TableName() string {
 type SearchDiklat struct {
 	Id      string `json:"id,omitempty"`
 	Nama    string `json:"nama,omitempty"`
-	Jdiklat []int  `json:"jdikat,omitempty"`
+	Jdiklat []int  `json:"jdiklat,omitempty"`
 	Status  []int  `json:"status,omitempty"`
 }
 

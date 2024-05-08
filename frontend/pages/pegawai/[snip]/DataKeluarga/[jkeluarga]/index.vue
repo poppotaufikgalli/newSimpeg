@@ -1,35 +1,70 @@
 <script setup>
-//const searchNip = ref(null)
-const searchNip = ref('198403192008121002')
+const { $decodeBase64, $encodeBase64 } = useNuxtApp()
+const route = useRoute()
+const dayjs = useDayjs()
+const toast = useToast()
+const {snip, jkeluarga} = route.params
 
 onMounted(() => {
 	refreshNuxtData(["getData"])
 })
 
-const { pending, data, refresh} = await useLazyAsyncData('getData', () => CariData())
-
-const CariData = async() => {
+const { pending, data, refresh} = await useLazyAsyncData('getData', async() => {
 	console.log("CariData")
 
+	let nip = $decodeBase64(snip)
 	var body = JSON.stringify({
-		nip: searchNip.value,
+		nip: nip,
+		jkeluarga: jkeluarga *1,
 	});
 
-	//body = body == "{}" ? null : body
-
-	return await $fetch('/api/posts/riwayat_pendum', {
+	return await $fetch('/api/posts/riwayat_keluarga', {
 		method: 'POST',
 		body: body,
 	});
+});
+
+const editData = (item) => {
+	let snama_kel = item ? $encodeBase64(item.nama_kel) : $encodeBase64(null)
+	navigateTo({ path: `/pegawai/${snip}/DataKeluarga/${jkeluarga}/${snama_kel}` })
+}
+
+const hapusData = async(item) => {
+	var body = JSON.stringify({
+		nip: item.nip,
+		jkeluarga: jkeluarga*1,
+		nama_kel: item.nama_kel,
+	});
+
+	var {data, error} = await useFetch('/api/delete/riwayat_keluarga', {
+		method: 'DELETE',
+		body: body,
+	});
+
+	if(error.value){
+		toast.add({
+	    	id: 'error_delete_riwayat_keluarga',
+	    	description: error.value.data.data,
+	    	timeout: 6000
+	  	}) 	
+	}else{
+		toast.add({
+	    	id: 'success_delete_riwayat_keluarga',
+	    	description: "Data Keluarga berhasil di Hapus",
+	    	timeout: 6000
+	  	}) 	
+	}
+
+	refreshNuxtData(["getData"])
 }
 </script>
 <template>
-	<LayoutRiwayatPendidikan>
+	<LayoutDataKeluarga>
 		<div class="mx-auto">
 			<!-- Card -->
 			<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2">
 				<div class="flex justify-end mb-2">
-					<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">Tambah</button>
+					<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="editData()">Tambah</button>
 				</div>
 				<div class="mb-8">
 					<div class="overflow-x-auto border">
@@ -45,27 +80,31 @@ const CariData = async() => {
 										</th>
 										<th scope="col" class="px-3 text-center">
 											<span class="text-xs font-semibold uppercase text-gray-800">
-												Tingkat Pendidikan
+												Nama
 											</span>
 										</th>
 										<th scope="col" class="px-3 text-center">
 											<span class="text-xs font-semibold uppercase text-gray-800">
-												Jurusan
+												Tempat/Tgl lahir
 											</span>
 										</th>
+										<template v-if="jkeluarga == 1">
+											<th scope="col" class="px-3 text-center">
+												<span class="text-xs font-semibold uppercase text-gray-800">
+													Tgl Menikah
+												</span>
+											</th>	
+										</template>
+										<template v-else-if="jkeluarga == 2">
+											<th scope="col" class="px-3 text-center">
+												<span class="text-xs font-semibold uppercase text-gray-800">
+													Jenis Kelamin
+												</span>
+											</th>
+										</template>
 										<th scope="col" class="px-3 text-center">
 											<span class="text-xs font-semibold uppercase text-gray-800">
-												Nama Sekolah
-											</span>
-										</th>
-										<th scope="col" class="px-3 text-center">
-											<span class="text-xs font-semibold uppercase text-gray-800">
-												Tempat
-											</span>
-										</th>
-										<th scope="col" class="px-3 text-center">
-											<span class="text-xs font-semibold uppercase text-gray-800">
-												Akhir
+												Pekerjaan
 											</span>
 										</th>
 										<th scope="col" class="px-3 text-center"></th>
@@ -86,19 +125,23 @@ const CariData = async() => {
 													</button>
 												</td>
 												<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
-													<span class="flex justify-start text-xs py-0">{{item.TingkatPendidikan?.nama}}</span>
+													<span class="flex justify-start text-xs py-0">{{item.nama_kel}}</span>
 												</td>
 												<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
-													<span class="flex justify-start text-xs py-0">{{item.Pendidikan?.nama}}</span>
+													<span class="flex justify-start text-xs py-0">{{item.ktlahir}} / {{item.tlahir ? $dayjs(item.tlahir).format("DD-MM-YYYY").toString() : '-'}}</span>
 												</td>
+												<template v-if="jkeluarga == 1">
+													<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
+														<span class="flex justify-start text-xs py-0">{{item.tkawin ? $dayjs(item.tkawin).format("DD-MM-YYYY").toString() : '-'}}</span>
+													</td>
+												</template>
+												<template v-else-if="jkeluarga == 2">	
+													<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
+														<span class="flex justify-center text-xs py-0">{{item.kjkel == 1 ? 'Laki-laki' : 'Perempuan'}}</span>
+													</td>
+												</template>
 												<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
-													<span class="flex justify-start text-xs py-0">{{item.nsek}}</span>
-												</td>
-												<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
-													<span class="flex justify-start text-xs py-0">{{item.tempat}}</span>
-												</td>
-												<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
-													<span class="flex justify-center text-xs py-0">{{item.akhir == 1 ? 'Ya' : ''}}</span>
+													<span class="flex justify-start text-xs py-0">{{item.pekerjaan?.nama}}</span>
 												</td>
 												<td class="size-px px-1" style="vertical-align: top;">
 													<div class="sm:flex gap-x-1">
@@ -107,14 +150,14 @@ const CariData = async() => {
 																<path fill-rule="evenodd" d="M4.5 13a3.5 3.5 0 0 1-1.41-6.705A3.5 3.5 0 0 1 9.72 4.124a2.5 2.5 0 0 1 3.197 3.018A3.001 3.001 0 0 1 12 13H4.5Zm.72-5.03a.75.75 0 0 0 1.06 1.06l.97-.97v2.69a.75.75 0 0 0 1.5 0V8.06l.97.97a.75.75 0 1 0 1.06-1.06L8.53 5.72a.75.75 0 0 0-1.06 0L5.22 7.97Z" clip-rule="evenodd" />
 															</svg>
 														</button>
-														<button type="button" class="flex flex-shrink-0 justify-center items-center gap-2 size-[24px] text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+														<button type="button" class="flex flex-shrink-0 justify-center items-center gap-2 size-[24px] text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="editData(item)">
 														  	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="flex-shrink-0 size-3">
 															  	<path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z" />
 															  	<path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z" />
 															</svg>
 
 														</button>
-														<button type="button" class="flex flex-shrink-0 justify-center items-center gap-2 size-[24px] text-sm font-semibold rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">
+														<button type="button" class="flex flex-shrink-0 justify-center items-center gap-2 size-[24px] text-sm font-semibold rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:pointer-events-none" @click="hapusData(item)">
 														  	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="flex-shrink-0 size-3">
 															  	<path fill-rule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.711Z" clip-rule="evenodd" />
 															</svg>
@@ -133,5 +176,5 @@ const CariData = async() => {
 				</div>
 			</div>
 		</div>
-	</LayoutRiwayatPendidikan>
+	</LayoutDataKeluarga>
 </template>

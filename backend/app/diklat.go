@@ -15,7 +15,7 @@ import (
 func GetDiklat(searchString model.SearchDiklat) (diklat []model.Diklat, result *gorm.DB) {
 	db, _ := model.CreateCon()
 
-	result = db.Model(&model.Diklat{})
+	result = db.Model(&model.Diklat{}).Debug()
 
 	//id
 	if searchString.Id != "" {

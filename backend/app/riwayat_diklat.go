@@ -67,6 +67,23 @@ func FindRiwayatDiklat(c echo.Context) error {
 	})
 }
 
+func GetRiwayatDiklatByNipJdiklatTmulai(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_diklat model.RiwayatDiklat
+	nip := c.Param("nip")
+	jdiklat := c.Param("jdiklat")
+	tmulai := c.Param("tmulai")
+
+	result := db.Model(&model.RiwayatDiklat{}).Where("nip =? and jdiklat = ? and tmulai = ?", nip, jdiklat, tmulai).Scan(&riwayat_diklat)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_diklat,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatDiklat(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -109,10 +126,17 @@ func CreateRiwayatDiklat(c echo.Context) error {
 func UpdateRiwayatDiklat(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_diklat model.RiwayatDiklat
+	//var riwayat_diklat model.RiwayatDiklat
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_diklat)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatDiklat `json:"refdata"`
+		Data model.RiwayatDiklat       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -121,15 +145,16 @@ func UpdateRiwayatDiklat(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_diklat); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_diklat.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatDiklat{}).Where("nip = ? and jdiklat = ? and tmulai = ?", riwayat_diklat.Nip, riwayat_diklat.Jdiklat, riwayat_diklat.Tmulai).Updates(&riwayat_diklat)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	Tmulai := (reqData.Ref.Tmulai).Format("2006-01-02")
+	result := db.Model(&model.RiwayatDiklat{}).Where("nip = ? and jdiklat = ? and tmulai = ?", reqData.Ref.Nip, reqData.Ref.Jdiklat, Tmulai).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -146,7 +171,7 @@ func UpdateRiwayatDiklat(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_diklat,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})

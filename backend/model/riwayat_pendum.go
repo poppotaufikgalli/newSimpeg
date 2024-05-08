@@ -25,14 +25,14 @@ type DeleteRiwayatPendum struct {
 type RiwayatPendum struct {
 	Nip               string            `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
 	Ktpu              string            `json:"ktpu" validate:"required"`
-	TingkatPendidikan TingkatPendidikan `gorm:"foreignKey:Ktpu" json:"TingkatPendidikan"`
+	TingkatPendidikan TingkatPendidikan `gorm:"foreignKey:Ktpu" json:"TingkatPendidikan" validate:"-"`
 	Kjur              string            `json:"kjur" validate:"required"`
-	Pendidikan        Pendidikan        `gorm:"foreignKey:Kjur" json:"Pendidikan"`
+	Pendidikan        Pendidikan        `gorm:"foreignKey:Kjur" json:"Pendidikan" validate:"-"`
 	Nsek              *string           `json:"nsek"`
 	Tempat            *string           `json:"tempat"`
 	Nkepsek           *string           `json:"nkepsek"`
 	Nsttb             *string           `json:"nsttb"`
-	Tsttb             *string           `json:"tsttb"`
+	Tsttb             *time.Time        `json:"tsttb"`
 	Akhir             *int              `json:"akhir"`
 	Npdum             *string           `json:"npdum"`
 	Negara            *string           `json:"negara"`

@@ -59,6 +59,21 @@ func FindJenisKeluarga(c echo.Context) error {
 	})
 }
 
+func GetJenisKeluargaByJkeluarga(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var jenis_keluarga model.JenisKeluarga
+	id := c.Param("id")
+
+	result := db.Model(&model.JenisKeluarga{}).Where("id=?", id).Scan(&jenis_keluarga)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       jenis_keluarga,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateJenisKeluarga(c echo.Context) error {
 	db, _ := model.CreateCon()
 

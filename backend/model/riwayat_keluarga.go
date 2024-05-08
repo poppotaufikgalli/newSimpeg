@@ -24,6 +24,7 @@ type RiwayatKeluarga struct {
 	Nip       string     `gorm:"primaryKey;autoIncrement:false" json:"nip" validate:"required"`
 	Jkeluarga int        `json:"jkeluarga" validate:"required"`
 	NamaKel   string     `json:"nama_kel" validate:"required"`
+	NamaOrtu  *string    `json:"nama_ortu"`
 	Ktlahir   *string    `json:"ktlahir"`
 	Tlahir    *time.Time `json:"tlahir"`
 	Tijazah   *string    `json:"tijazah"`
@@ -31,7 +32,7 @@ type RiwayatKeluarga struct {
 	Stunj     string     `json:"stunj"`
 	Kjkel     int        `json:"kjkel"`
 	Kkerja    float64    `json:"kkerja"`
-	Pekerjaan Pekerjaan  `gorm:"foreignKey:Kkerja" json:"Pekerjaan"`
+	Pekerjaan Pekerjaan  `gorm:"foreignKey:kkerja" json:"pekerjaan" validate:"-"`
 	Instansi  *string    `json:"instansi"`
 	NipKel    *string    `json:"nip_kel"`
 	Hubkel    string     `json:"hubkel"`

@@ -58,6 +58,21 @@ func FindJenisDiklat(c echo.Context) error {
 	})
 }
 
+func GetJenisDiklatByJdiklat(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var jenis_diklat model.JenisDiklat
+	id := c.Param("id")
+
+	result := db.Model(&model.JenisDiklat{}).Where("id = ?", id).Scan(&jenis_diklat)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       jenis_diklat,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateJenisDiklat(c echo.Context) error {
 	db, _ := model.CreateCon()
 

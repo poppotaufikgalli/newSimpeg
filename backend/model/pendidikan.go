@@ -9,11 +9,11 @@ func (Pendidikan) TableName() string {
 }
 
 type SearchPendidikan struct {
-	Id             string `json:"id,omitempty"`
-	RefBkn         string `json:"ref_bkn,omitempty"`
-	TkPendidikanId string `json:"tk_pendidikan_id,omitempty"`
-	Nama           string `json:"nama,omitempty"`
-	Status         []int  `json:"status,omitempty"`
+	Id             string   `json:"id,omitempty"`
+	RefBkn         string   `json:"ref_bkn,omitempty"`
+	TkPendidikanId []string `json:"tk_pendidikan_id,omitempty"`
+	Nama           string   `json:"nama,omitempty"`
+	Status         []int    `json:"status,omitempty"`
 }
 
 type DeletePendidikan struct {

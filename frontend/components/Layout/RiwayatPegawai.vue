@@ -69,9 +69,6 @@
 						    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/RiwayatPegawai/pemberhentian-jft`">
 						    	  	Pemberhentian dari Jabatan Fungsional
 						    	</NuxtLink>
-						    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/RiwayatPegawai/tubel`">
-						    	  	Tugas Belajar
-						    	</NuxtLink>
 						  	</nav>
 					  	</div>
 						</div>

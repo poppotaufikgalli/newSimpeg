@@ -59,6 +59,8 @@ func main() {
 	e.POST("/upload/organisasi/:nip", app.UploadOrganisasi)
 	e.POST("/upload/tugas_ln/:nip", app.UploadTugasLn)
 	e.POST("/upload/bahasa/:nip", app.UploadBahasa)
+	e.POST("/upload/pendum/:nip", app.UploadPendum)
+	e.POST("/upload/diklat/:nip", app.UploadDiklat)
 
 	//pegawai
 	routePegawai := e.Group("/pegawai")
@@ -151,6 +153,7 @@ func main() {
 	//Diklat
 	routeDiklat := e.Group("/diklat")
 	routeDiklat.GET("", app.FindDiklat)
+	routeDiklat.POST("", app.FindDiklat)
 	routeDiklat.POST("/new", app.CreateDiklat)
 	routeDiklat.PUT("", app.UpdateDiklat)
 	routeDiklat.DELETE("", app.DeleteDiklat)
@@ -241,6 +244,7 @@ func main() {
 	//Jenis Diklat
 	routeJenisDiklat := e.Group("/jenis_diklat")
 	routeJenisDiklat.GET("", app.FindJenisDiklat)
+	routeJenisDiklat.GET("/:id", app.GetJenisDiklatByJdiklat)
 	routeJenisDiklat.POST("/new", app.CreateJenisDiklat)
 	routeJenisDiklat.PUT("", app.UpdateJenisDiklat)
 	routeJenisDiklat.DELETE("", app.DeleteJenisDiklat)
@@ -283,6 +287,7 @@ func main() {
 	//Jenis Keluarga
 	routeJenisKeluarga := e.Group("/jenis_keluarga")
 	routeJenisKeluarga.GET("", app.FindJenisKeluarga)
+	routeJenisKeluarga.GET("/:id", app.GetJenisKeluargaByJkeluarga)
 	routeJenisKeluarga.POST("/new", app.CreateJenisKeluarga)
 	routeJenisKeluarga.PUT("", app.UpdateJenisKeluarga)
 	routeJenisKeluarga.DELETE("", app.DeleteJenisKeluarga)
@@ -402,6 +407,7 @@ func main() {
 	//pendidikan
 	routePendidikan := e.Group("/pendidikan")
 	routePendidikan.GET("", app.FindPendidikan)
+	routePendidikan.POST("", app.FindPendidikan)
 	routePendidikan.POST("/new", app.CreatePendidikan)
 	routePendidikan.PUT("", app.UpdatePendidikan)
 	routePendidikan.DELETE("", app.DeletePendidikan)
@@ -458,6 +464,7 @@ func main() {
 	routeRiwayatDiklat := e.Group("/riwayat_diklat")
 	routeRiwayatDiklat.GET("", app.FindRiwayatDiklat)
 	routeRiwayatDiklat.POST("", app.FindRiwayatDiklat)
+	routeRiwayatDiklat.GET("/:nip/:jdiklat/:tmulai", app.GetRiwayatDiklatByNipJdiklatTmulai)
 	routeRiwayatDiklat.POST("/new", app.CreateRiwayatDiklat)
 	routeRiwayatDiklat.PUT("", app.UpdateRiwayatDiklat)
 	routeRiwayatDiklat.DELETE("", app.DeleteRiwayatDiklat)
@@ -486,6 +493,7 @@ func main() {
 	routeRiwayatKeluarga := e.Group("/riwayat_keluarga")
 	routeRiwayatKeluarga.GET("", app.FindRiwayatKeluarga)
 	routeRiwayatKeluarga.POST("", app.FindRiwayatKeluarga)
+	routeRiwayatKeluarga.GET("/:nip/:jkeluarga/:nama_kel", app.GetRiwayatKeluargaByNipJkeluargaNamakel)
 	routeRiwayatKeluarga.POST("/new", app.CreateRiwayatKeluarga)
 	routeRiwayatKeluarga.PUT("", app.UpdateRiwayatKeluarga)
 	routeRiwayatKeluarga.DELETE("", app.DeleteRiwayatKeluarga)
@@ -512,6 +520,7 @@ func main() {
 	routeRiwayatPendum := e.Group("/riwayat_pendum")
 	routeRiwayatPendum.GET("", app.FindRiwayatPendum)
 	routeRiwayatPendum.POST("", app.FindRiwayatPendum)
+	routeRiwayatPendum.GET("/:nip/:ktpu/:kjur", app.GetRiwayatPendumByNipKtpuKjur)
 	routeRiwayatPendum.POST("/new", app.CreateRiwayatPendum)
 	routeRiwayatPendum.PUT("", app.UpdateRiwayatPendum)
 	routeRiwayatPendum.DELETE("", app.DeleteRiwayatPendum)

@@ -66,6 +66,23 @@ func FindRiwayatPendum(c echo.Context) error {
 	})
 }
 
+func GetRiwayatPendumByNipKtpuKjur(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_pendum model.RiwayatPendum
+	nip := c.Param("nip")
+	ktpu := c.Param("ktpu")
+	kjur := c.Param("kjur")
+
+	result := db.Model(&model.RiwayatPendum{}).Where("nip =? and ktpu =? and kjur =?", nip, ktpu, kjur).Scan(&riwayat_pendum)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_pendum,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateRiwayatPendum(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -108,10 +125,17 @@ func CreateRiwayatPendum(c echo.Context) error {
 func UpdateRiwayatPendum(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_pendum model.RiwayatPendum
+	//var riwayat_pendum model.RiwayatPendum
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_pendum)
+	type ToUpdateData struct {
+		Ref  model.DeleteRiwayatPendum `json:"refdata"`
+		Data model.RiwayatPendum       `json:"data"`
+	}
+
+	var reqData ToUpdateData
+
+	err := json.NewDecoder(c.Request().Body).Decode(&reqData)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -120,15 +144,15 @@ func UpdateRiwayatPendum(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_pendum); err != nil {
+	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_pendum.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Model(&model.RiwayatPendum{}).Where("nip = ? and ktpu = ? and kjur = ?", riwayat_pendum.Nip, riwayat_pendum.Ktpu, riwayat_pendum.Kjur).Updates(&riwayat_pendum)
+	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
+	result := db.Model(&model.RiwayatPendum{}).Where("nip = ? and ktpu = ? and kjur = ?", reqData.Ref.Nip, reqData.Ref.Ktpu, reqData.Ref.Kjur).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -145,7 +169,7 @@ func UpdateRiwayatPendum(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_pendum,
+		"data":       reqData.Data,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})
