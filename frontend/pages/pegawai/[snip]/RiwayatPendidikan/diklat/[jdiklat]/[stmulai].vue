@@ -320,10 +320,10 @@ const ntmulai = ref([
 					<div class="grid sm:grid-cols-12 gap-2 gap-2.5">
 						
 						<div class="sm:col-span-3">
-							<label class="inline-block text-sm text-gray-800 mt-2.5">Nama {{njdiklat}} {{jdiklat}}</label>
+							<label class="inline-block text-sm text-gray-800 mt-2.5">Nama {{njdiklat}}</label>
 						</div>
 						<!-- End Col -->
-						<template v-if="[1,2,3,10].includes(jdiklat*1)">
+						<template v-if="[1].includes(jdiklat*1)">
 							<div class="sm:col-span-9">
 								<SearchSelect2 ref="refDiklat" id="diklats" :options="diklats" keyList="id" namaList="nama" v-model="ndiklat"/>
 							</div>

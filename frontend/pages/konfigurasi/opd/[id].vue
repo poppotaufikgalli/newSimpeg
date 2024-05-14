@@ -102,7 +102,7 @@ async function simpanData() {
 		    	description: "Data OPD berhasil di Update",
 		    	timeout: 6000
 		  	}) 	
-		  	navigateTo({ path: '/referensi/opd' })
+		  	navigateTo({ path: '/konfigurasi/opd' })
 		}
 		//console.log(error.value.data.data)
 		
@@ -126,7 +126,7 @@ async function simpanData() {
 		    	description: "Data OPD berhasil di Ditambahkan",
 		    	timeout: 6000
 		  	})
-		  	navigateTo({ path: '/referensi/opd' })
+		  	navigateTo({ path: '/konfigurasi/opd' })
 		}
 	}
   	//showSpinner.value = false
@@ -154,7 +154,7 @@ const findNewIDOPD = (parent) => {
 
 </script>
 <template>
-	<LayoutReferensi>
+	<LayoutKonfigurasi>
 		<div class="mx-auto">
 			<!-- Card -->
 			<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2">
@@ -266,5 +266,5 @@ const findNewIDOPD = (parent) => {
 	  		</div>
 	  		<!-- End Card -->
 		</div>
-	</LayoutReferensi>
+	</LayoutKonfigurasi>
 </template>

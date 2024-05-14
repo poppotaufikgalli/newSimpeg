@@ -258,7 +258,7 @@ const callback = async(e) => {
 		formData.append("knpang", dataPangkat.value.knpang);
 
 		formData.append("file", fileBlob.value[0]);
-		formData.append("filename", nip+"_pangkat"+dataPangkat.value.kgolru);
+		formData.append("filename", nip+"_pangkat"+dataPangkat.value.kgolru+"_"+dataPangkat.value.knpang);
 		formData.append("path", 'dokumen/'+nip);
 
 		var {data, error} = await useFetch(`/api/uploads/upload/pangkat/${nip}`, {

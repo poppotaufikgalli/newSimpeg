@@ -65,7 +65,12 @@ const CariData = async() => {
 										</th>
 										<th scope="col" class="px-3 text-center">
 											<span class="text-xs font-semibold uppercase text-gray-800">
-												Akhir
+												Nomor SK
+											</span>
+										</th>
+										<th scope="col" class="px-3 text-center">
+											<span class="text-xs font-semibold uppercase text-gray-800">
+												Tanggal SK
 											</span>
 										</th>
 										<th scope="col" class="px-3 text-center"></th>
@@ -96,6 +101,9 @@ const CariData = async() => {
 												</td>
 												<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
 													<span class="flex justify-start text-xs py-0">{{item.tempat}}</span>
+												</td>
+												<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
+													<span class="flex justify-center text-xs py-0">{{item.akhir == 1 ? 'Ya' : ''}}</span>
 												</td>
 												<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
 													<span class="flex justify-center text-xs py-0">{{item.akhir == 1 ? 'Ya' : ''}}</span>

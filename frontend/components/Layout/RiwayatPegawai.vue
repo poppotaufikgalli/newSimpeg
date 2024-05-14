@@ -46,7 +46,13 @@
 						    	  	Pindah Instansi
 						    	</NuxtLink>
 						    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/RiwayatPegawai/skp`">
+						    	  	DP3 ==
+						    	</NuxtLink>
+						    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/RiwayatPegawai/skp`">
 						    	  	SKP
+						    	</NuxtLink>
+						    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/RiwayatPegawai/skp`">
+						    	  	Kinerja Priodik ==
 						    	</NuxtLink>
 						    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/RiwayatPegawai/penghargaan`">
 						    	  	Penghargaan / Tanda Jasa

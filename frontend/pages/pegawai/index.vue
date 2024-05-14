@@ -57,8 +57,7 @@ const refJenisPegawai = ref(null)
 
 const opds_utama = computed({
 	get(){
-		const dataOPD = opds.value
-		return dataOPD
+		return opds.value
 	}
 })
 

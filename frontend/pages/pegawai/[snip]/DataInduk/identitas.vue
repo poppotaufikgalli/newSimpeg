@@ -40,37 +40,34 @@ const dataInduk = ref({
 	alkokec: '',
 	alkodes: '',
 	kpos:'',
-	//kaparpol: '',
-	//npap_g: '',
 	nkarpeg: '',
-	nakses: '',
+	naskes: '',
 	ntaspen:'',
 	nkaris_su:'',
 	npwp: '',
 	nik:'',
-	//file_bmp: '',
 	aktif: '',
 	jjiwa: '',
 	marga: '',
 	suku: '',
-	//tgl_peg: '',
-	//niplama: '',
-	//tgl_reg: '',
 	stat_kpe: '',
-	//no_pinpeg: '',
-	//alkoproplahir:'',
-	//alkokablahir: '',
 	tgl_kpe: '',
 	thn_pendataan: '',
 	no_ref_bkn: '',
 	email:'',
-	email_pemerintah: '',
+	email_pemerintahan: '',
+	kartu_asn:'',
+	bpjs:'',
+	niplama:'',
+	tapera:'',
 })
 
 const { pending, data, refresh} = await useAsyncData('getDataIdentitas', async() => {
+	console.log("getDataIdentitasIdentitas")
 	if(snip){
+		showSpinner.value = true
 		let nip = $decodeBase64(snip)
-		var result = await $fetch('/api/gets/pegawai/'+nip);
+		/*var result = await $fetch('/api/gets/pegawai/'+nip);
 
 		if(result.nip == nip){
 			method.value = "Update"
@@ -78,7 +75,24 @@ const { pending, data, refresh} = await useAsyncData('getDataIdentitas', async()
 			dataInduk.value = _pickBy(result, function(val, key) {
 				return _includes(_keys(dataInduk.value), key);
 			})
-		}
+		}*/
+
+		const [data_simpeg, wilayah] = await Promise.all([
+	    	$fetch('/api/gets/pegawai/'+nip),
+	    	$fetch('/api/gets/wilayah'),
+	  	])
+
+	  	wilayahs.value = wilayah
+
+	  	if(data_simpeg.nip == nip){
+	  		method.value = "Update"
+
+	  		dataInduk.value = _pickBy(data_simpeg, function(val, key) {
+				return _includes(_keys(dataInduk.value), key);
+			})
+	  	}
+
+	  	showSpinner.value = false
 	}
 })
 
@@ -99,7 +113,7 @@ const refKkel = ref(null)
 const selUploadDoc = ref(null)
 
 const { pending: pendingRef, data: dataRef, refresh: refreshDataRef } = await useAsyncData('getDataRef', async () => {
-  	const [agama, status, jenis, duduk, kawin, goldar, kpe, wilayah] = await Promise.all([
+  	const [agama, status, jenis, duduk, kawin, goldar, kpe] = await Promise.all([
     	$fetch('/api/gets/agama'),
     	$fetch('/api/gets/status_pegawai'),
     	$fetch('/api/gets/jenis_pegawai'),
@@ -107,7 +121,7 @@ const { pending: pendingRef, data: dataRef, refresh: refreshDataRef } = await us
     	$fetch('/api/gets/jenis_kawin'),
     	$fetch('/api/gets/jenis_goldar'),
     	$fetch('/api/gets/kpe'),
-    	$fetch('/api/gets/wilayah'),
+    	
   	])
 
   	agamas.value = agama
@@ -117,7 +131,6 @@ const { pending: pendingRef, data: dataRef, refresh: refreshDataRef } = await us
   	kawins.value = kawin
   	goldars.value = goldar
   	kpes.value = kpe
-  	wilayahs.value = wilayah
 });
 
 onMounted(() => {
@@ -134,43 +147,73 @@ const provs = computed({
 	}
 })
 
+const alkoprop = computed({
+	get(){
+		return dataInduk.value.alkoprop
+	},
+	set(val){
+		dataInduk.value.alkoprop = val
+
+		if(refKkab){
+			refKkab.value.reinit()
+		}
+
+		alkokab.value = null
+	}
+})
+
 const kabs = computed({
 	get(){
 		var result = _filter(wilayahs.value, function(o){
-			return o.twil == 2 && o.kprov == dataInduk.value.alkoprop
-		})
-		nextTick(() => {
-			if(refKkab.value){
-				refKkab.value.reinit()		
-			}
+			return o.twil == 2 && o.kprov == alkoprop.value
 		})
 		return result
+	}
+})
+
+const alkokab = computed({
+	get(){
+		return dataInduk.value.alkokab
+	},
+	set(val){
+		dataInduk.value.alkokab = val
+
+		if(refKkec){
+			refKkec.value.reinit()
+		}
+
+		alkokec.value = null
 	}
 })
 
 const kecs = computed({
 	get(){
 		var result = _filter(wilayahs.value, function(o){
-			return o.twil == 3 && o.kprov == dataInduk.value.alkoprop && o.kkab == dataInduk.value.alkokab
-		})
-		nextTick(() => {
-			if(refKkec.value){
-				refKkec.value.reinit()	
-			}
+			return o.twil == 3 && o.kprov == alkoprop.value && o.kkab == alkokab.value
 		})
 		return result
+	}
+})
+
+const alkokec = computed({
+	get(){
+		return dataInduk.value.alkokec
+	},
+	set(val){
+		dataInduk.value.alkokec = val
+
+		if(refKkel){
+			refKkel.value.reinit()
+		}
+
+		dataInduk.value.alkodes = null
 	}
 })
 
 const kels = computed({
 	get(){
 		var result = _filter(wilayahs.value, function(o){
-			return o.twil == 4 && o.kprov == dataInduk.value.alkoprop && o.kkab == dataInduk.value.alkokab && o.kkec == dataInduk.value.alkokec
-		})
-		nextTick(() => {
-			if(refKkel.value){
-				refKkel.value.reinit()	
-			}
+			return o.twil == 4 && o.kprov == alkoprop.value && o.kkab == alkokab.value && o.kkec == alkokec.value
 		})
 		return result
 	}
@@ -299,12 +342,6 @@ function onlyNumber ($event) {
    	}
 }
 
-const modalIdentitasBKNShow = ref(false)
-const toggleModalIdentitasBKN = () => {
-	console.log(modalIdentitasBKNShow.value)
-	modalIdentitasBKNShow.value = !modalIdentitasBKNShow.value
-}
-
 const doUploadDoc = async(caption, doc) => {
 	let nip = $decodeBase64(snip)
 	selUploadDoc.value = doc
@@ -356,62 +393,34 @@ const callback = async(e) => {
 </script>
 <template>
 	<AppLoadingSpinner :show="showSpinner" />
-	<ModalIdentitasBKN :show="modalIdentitasBKNShow" />
 	<LayoutDataInduk>
 		<div class="mx-auto">
 			<!-- Card -->
 			<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2">
 				<div class="mb-8">
-					<div class="inline-flex justify-between items-center w-full gap-x-2">
-						<h2 class="text-xl font-bold text-blue-600">Identitas Pegawai</h2>
-						<div class="flex w-[60%]">
-							<input type="text" name="hs-input-with-add-on-url" id="hs-input-with-add-on-url" class="py-2 px-4 pe-11 block w-full border-b border-gray-200 shadow-sm text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-80 disabled:pointer-events-none bg-white" disabled placeholder="Referensi ID PNS" :value="dataInduk.no_ref_bkn">
-							<button type="button" class="py-3 px-4 inline-flex justify-center items-center gap-x-2 text-xs font-semibold rounded-e-md border border-transparent bg-gray-600 text-white hover:bg-gray-700 disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap">
-								<svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-										<path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm1.23-3.723a.75.75 0 0 0 .219-.53V2.929a.75.75 0 0 0-1.5 0V5.36l-.31-.31A7 7 0 0 0 3.239 8.188a.75.75 0 1 0 1.448.389A5.5 5.5 0 0 1 13.89 6.11l.311.31h-2.432a.75.75 0 0 0 0 1.5h4.243a.75.75 0 0 0 .53-.219Z" clip-rule="evenodd" />
-								</svg>
-								ID PNS
-							</button>
-						</div>
-					</div>
+					<h2 class="text-xl font-bold text-blue-600">Identitas Pegawai</h2>
 				</div>
-
 				<div class="grid sm:grid-cols-12 gap-2 gap-2.5">
 					<div class="sm:col-span-3">
 						<label for="af-account-full-name" class="inline-block text-sm text-gray-800 mt-2.5">NIP</label>
 					</div>
 					<!-- End Col -->
 
+					<div class="sm:col-span-7">
+						<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" maxlength="18" v-model="dataInduk.nip" @keypress="onlyNumber">
+					</div>
+					<div class="sm:col-span-2">
+						<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.niplama">
+					</div>
+					<!-- End Col -->
+					<div class="sm:col-span-3">
+						<label for="af-account-full-name" class="inline-block text-sm text-gray-800 mt-2.5">ID PNS BKN</label>
+					</div>
+					<!-- End Col -->
+
 					<div class="sm:col-span-9">
 						<div class="sm:flex gap-2">
-							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" maxlength="18" v-model="dataInduk.nip" @keypress="onlyNumber">
-							<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-green-300 text-gray-800 shadow-sm hover:bg-green-400 disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap" @click="toggleModalIdentitasBKN">
-		  						Lihat Data BKN
-							</button>
-						</div>
-					</div>
-					<!-- End Col -->
-
-					<div class="sm:col-span-3">
-						<label for="af-account-full-name" class="inline-block text-sm text-gray-800 mt-2.5">NIK/NPWP</label>
-					</div>
-					<!-- End Col -->
-
-					<div class="sm:col-span-3">
-						<div class="sm:flex gap-2">
-							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="NIK" v-model="dataInduk.nik" @keypress="onlyNumber">
-						</div>
-					</div>
-					<!-- End Col -->
-
-					<div class="sm:col-span-2 sm:col-start-8">
-						<label for="af-account-full-name" class="inline-block text-sm text-gray-800 mt-2.5">NPWP 16 Digit</label>
-					</div>
-					<!-- End Col -->
-
-					<div class="sm:col-span-3">
-						<div class="sm:flex gap-2">
-							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="NPWP" v-model="dataInduk.npwp" @keypress="onlyNumber">
+							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="NIK" v-model="dataInduk.no_ref_bkn">
 						</div>
 					</div>
 					<!-- End Col -->
@@ -590,7 +599,7 @@ const callback = async(e) => {
 					<!-- End Col -->
 
 					<div class="sm:col-span-9">
-						<SearchSelect2 v-if="!pending && !pendingRef" ref="refKprov" id="provs" :options="provs" keyList="kprov" namaList="nwil" v-model="dataInduk.alkoprop" />
+						<SearchSelect2 v-if="!pending" ref="refKprov" id="provs" :options="provs" keyList="kprov" namaList="nwil" v-model="alkoprop" />
 					</div>
 					<!-- End Col -->
 
@@ -600,7 +609,7 @@ const callback = async(e) => {
 					<!-- End Col -->
 
 					<div class="sm:col-span-9">
-						<SearchSelect2 v-if="!pending && !pendingRef" ref="refKkab" id="kabs" :options="kabs" keyList="kkab" namaList="nwil" v-model="dataInduk.alkokab" />
+						<SearchSelect2 v-if="!pending" ref="refKkab" id="kabs" :options="kabs" keyList="kkab" namaList="nwil" v-model="alkokab" />
 					</div>
 					<!-- End Col -->
 
@@ -610,7 +619,7 @@ const callback = async(e) => {
 					<!-- End Col -->
 
 					<div class="sm:col-span-9">
-						<SearchSelect2 v-if="!pending && !pendingRef" ref="refKkec" id="kecs" :options="kecs" keyList="kkec" namaList="nwil" v-model="dataInduk.alkokec" />
+						<SearchSelect2 v-if="!pending" ref="refKkec" id="kecs" :options="kecs" keyList="kkec" namaList="nwil" v-model="alkokec" />
 					</div>
 					<!-- End Col -->
 
@@ -620,7 +629,7 @@ const callback = async(e) => {
 					<!-- End Col -->
 
 					<div class="sm:col-span-9">
-						<SearchSelect2 v-if="!pending && !pendingRef" ref="refKkel" id="kels" :options="kels" keyList="tk_kdesa" namaList="nwil" v-model="dataInduk.alkodes" />
+						<SearchSelect2 v-if="!pending" ref="refKkel" id="kels" :options="kels" keyList="tk_kdesa" namaList="nwil" v-model="dataInduk.alkodes" />
 					</div>
 					<!-- End Col -->
 
@@ -683,6 +692,30 @@ const callback = async(e) => {
 					<div class="sm:col-span-12 my-2 first:pt-0 last:pb-0 border-t first:border-transparent border-gray-200"></div>
 
 					<div class="sm:col-span-3">
+						<label for="af-account-full-name" class="inline-block text-sm text-gray-800 mt-2.5">NIK/NPWP</label>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-3">
+						<div class="sm:flex gap-2">
+							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="NIK" v-model="dataInduk.nik" @keypress="onlyNumber">
+						</div>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-2 sm:col-start-8">
+						<label for="af-account-full-name" class="inline-block text-sm text-gray-800 mt-2.5">NPWP 16 Digit</label>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-3">
+						<div class="sm:flex gap-2">
+							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="NPWP" v-model="dataInduk.npwp" @keypress="onlyNumber">
+						</div>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-3">
 					  	<label for="af-account-gender-checkbox" class="inline-block text-sm text-gray-800 mt-2.5">Nomor Karpeg</label>
 					</div>
 					<!-- End Col -->
@@ -711,9 +744,21 @@ const callback = async(e) => {
 					</div>
 					<!-- End Col -->
 
-					<div class="sm:col-span-9">
+					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
 					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.ntaspen">
+					  	</div>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-2 sm:col-start-8">
+					  	<label for="af-account-gender-checkbox" class="inline-block text-sm text-gray-800 mt-2.5">Tapera</label>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-3">
+					  	<div class="sm:flex">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.tapera">
 					  	</div>
 					</div>
 					<!-- End Col -->
@@ -743,6 +788,42 @@ const callback = async(e) => {
 					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
 					  		<input type="date" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tgl_kpe">
+					  	</div>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-3">
+					  	<label for="af-account-gender-checkbox" class="inline-block text-sm text-gray-800 mt-2.5">ASKES</label>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-3">
+					  	<div class="sm:flex">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.naskes">
+					  	</div>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-2 sm:col-start-8">
+					  	<label for="af-account-gender-checkbox" class="inline-block text-sm text-gray-800 mt-2.5">BPJS</label>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-3">
+					  	<div class="sm:flex">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.bpjs">
+					  	</div>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-3">
+					  	<label for="af-account-gender-checkbox" class="inline-block text-sm text-gray-800 mt-2.5">Kartu ASN</label>
+					</div>
+					<!-- End Col -->
+
+					<div class="sm:col-span-3">
+					  	<div class="sm:flex">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.kartu_asn">
 					  	</div>
 					</div>
 					<!-- End Col -->

@@ -83,7 +83,7 @@ const hapusAK = async(item) => {
 										</th>
 										<th scope="col" class="px-3 text-center">
 											<span class="text-xs font-semibold uppercase text-gray-800">
-												Jenjang
+												Jenis AK
 											</span>
 										</th>
 										<th scope="col" class="px-3 text-center">
@@ -123,11 +123,11 @@ const hapusAK = async(item) => {
 														<span class="flex justify-center text-xs px-3 py-0">{{idx+1}}</span>
 													</button>
 												</td>
-												<td class="size-px px-1 text-center" style="vertical-align: top; min-width: 200px;">
+												<td class="size-px px-1 text-center" style="vertical-align: top; min-width: 100px;">
 													<span class="flex justify-center text-xs py-0">{{item.jabatan_ft?.nama}}</span>
 												</td>
 												<td class="size-px px-1 text-center" style="vertical-align: top; min-width: 100px;">
-													<span class="flex justify-center text-xs py-0">{{item.jenjang_ft?.nama}}</span>
+													<span class="flex justify-center text-xs py-0">AK {{item.jns}}</span>
 												</td>
 												<td class="size-px px-1" style="vertical-align: top; min-width: 100px;">
 													<span class="flex justify-center text-center text-xs py-0">{{item.tmulai ? $dayjs(item.tmulai).format("DD-MM-YYYY").toString() : '-'}} <span>&nbsp;&nbsp;&nbsp;s/d&nbsp;&nbsp;&nbsp;</span> {{item.tselesai ? $dayjs(item.tselesai).format("DD-MM-YYYY").toString() : '-'}}</span>

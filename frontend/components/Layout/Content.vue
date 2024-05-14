@@ -49,8 +49,7 @@ function search(){
 
 		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/pegawai">Pegawai</NuxtLink>
 		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/konfigurasi/group">Konfigurasi</NuxtLink>
-		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/referensi/opd">Referensi</NuxtLink>
-
+		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/approval">Approval</NuxtLink>
 		            <div class="hs-dropdown [--strategy:static] md:[--strategy:absolute] [--adaptive:none] md:[--trigger:hover] py-3 md:py-6">
 								  <button type="button" class="flex items-center w-full text-gray-800 hover:text-gray-600 font-medium">
 								    Resources

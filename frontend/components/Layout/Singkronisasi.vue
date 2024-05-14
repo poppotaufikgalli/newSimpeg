@@ -1,5 +1,6 @@
 <script setup>
-	const route = useRoute()
+const route = useRoute()
+const {snip} = route.params
 </script>
 <style scoped>
 .router-link-active {
@@ -20,32 +21,24 @@
 						<div class="flex flex-wrap">
 						  	<div class="w-full">
 						  		<nav class="-me-0.5 flex flex-col border divide-y rounded-md overflow-hidden">
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/token">
+							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/Singkronisasi/token`">
 							      		Token Info
 							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/DataInduk/identitas">
+							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/Singkronisasi/identitas`">
 							      		Data Utama
 							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/angka-kredit">
+							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/Singkronisasi/pangkat`">
+							      		Riwayat Pangkat
+							    	</NuxtLink>
+							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/Singkronisasi/angka-kredit`">
 							      		Angka Kredit
 							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/riwayat-stlud">
-							    	  	Riwayat STLUD
-							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/jabatan">
+							    	
+							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/Singkronisasi/jabatan`">
 							    	  	Jabatan
 							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/tugas-tambahan">
-							    	  	Tugas Tambahan
-							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/gaji-berkala">
-							    	  	Gaji Berkala
-							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/pmk">
-							    	  	Penyesuaian Masa Kerja
-							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/pindah-instansi">
-							    	  	Pindah Instansi
+							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/skp">
+							    	  	DP3
 							    	</NuxtLink>
 							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/skp">
 							    	  	SKP
@@ -58,21 +51,6 @@
 							    	</NuxtLink>
 							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/cuti">
 							    	  	Cuti
-							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/organisasi">
-							    	  	Organisasi
-							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/tugas-ln">
-							    	  	Tugas Luar Negeri
-							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/bahasa">
-							    	  	Penguasaan Bahasa
-							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/pemberhentian-jft">
-							    	  	Pemberhentian dari Jabatan Fungsional
-							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" to="/pegawai/form/Singkronisasi/tubel">
-							    	  	Tugas Belajar
 							    	</NuxtLink>
 							  	</nav>
 						  	</div>

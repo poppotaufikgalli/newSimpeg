@@ -10,7 +10,7 @@ onMounted(() => {
 })
 
 const { pending, data, refresh} = await useLazyAsyncData('getData', async() => {
-	console.log("CariData")
+	console.log("CariData pendum")
 
 	let nip = $decodeBase64(snip)
 	var body = JSON.stringify({
@@ -106,7 +106,7 @@ const hapusData = async(item) => {
 										<th scope="col" class="px-3 text-center"></th>
 									</tr>
 								</thead>
-								<template v-if="pending">
+								<template v-if="!data">
 									<td colspan="7" align="center">
 										<i>Loading</i>
 									</td>

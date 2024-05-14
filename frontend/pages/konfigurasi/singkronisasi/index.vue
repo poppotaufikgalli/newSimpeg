@@ -71,7 +71,6 @@ async function simpanData(){
 		  	}) 	
 		}
 	}
-  	//showSpinner.value = false
 }
 
 async function updateToken(type){

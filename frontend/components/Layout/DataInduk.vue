@@ -15,8 +15,8 @@
 		file_bmp: '',
 	})
 
-	const { pending, data, refresh} = await useAsyncData('getDataIdentitas', async() => {
-		console.log("getDataIdentitas")
+	const { pending, data, refresh} = await useAsyncData('getDataIdentitasPhoto', async() => {
+		console.log("getDataIdentitasPhoto")
 		if(snip){
 			let nip = $decodeBase64(snip)
 			var result = await $fetch('/api/gets/pegawai/'+nip);
@@ -50,7 +50,7 @@
 	}
 
 	onMounted(() => {
-		refreshNuxtData(["getDataIdentitas"])
+		refreshNuxtData(["getDataIdentitasPhoto"])
 		modalUpload.$onAction(callback, true)
 	})
 
@@ -74,7 +74,7 @@
 		        errors.value = error.data
 		    });
 
-		    refreshNuxtData(["getDataIdentitas"])
+		    refreshNuxtData(["getDataIdentitasPhoto"])
 		}
 	}
 </script>

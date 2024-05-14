@@ -125,19 +125,6 @@ const { pending, data, refresh} = await useAsyncData('getdataKeluarga', async() 
 	}
 })
 
-const ndiklat = computed({
-	get(){
-		return dataKeluarga.value.kdiklat
-	},
-	set(val){
-		dataKeluarga.value.kdiklat = val
-
-		var result = _find(diklats.value, {id: val})
-
-		dataKeluarga.value.ndiklat = result.nama
-	}
-})
-
 const tlahir = computed({
 	get(){
 		return dayjs(dataKeluarga.value.tlahir).format("YYYY-MM-DD").toString()
@@ -264,13 +251,13 @@ const callback = async(e) => {
 		let formData = new FormData();
 		let nip = $decodeBase64(snip)
 
-		formData.append("tmulai", tmulai.value);
-		formData.append("jdiklat", jdiklat);
+		formData.append("nama_kel", dataKeluarga.value.nama_kel);
+		formData.append("jkeluarga", jkeluarga);
 		formData.append("file", fileBlob.value[0]);
-		formData.append("filename", nip+"_keluarga_"+jdiklat+ "_" +tmulai.value);
+		formData.append("filename", nip+"_keluarga_"+jkeluarga+ "_" +dataKeluarga.value.nama_kel);
 		formData.append("path", 'dokumen/'+nip);
 
-		var {data, error} = await useFetch(`/api/uploads/upload/diklat/${nip}`, {
+		var {data, error} = await useFetch(`/api/uploads/upload/keluarga/${nip}`, {
 			method: 'POST',
 			body: formData,
 		});
@@ -284,7 +271,7 @@ const callback = async(e) => {
 		}else{
 			toast.add({
 		    	id: 'success_post_upload_keluarga',
-		    	description: `Dokumen Diklat berhasil di Upload`,
+		    	description: `Dokumen Keluarga berhasil di Upload`,
 		    	timeout: 6000
 		  	}) 	
 		}

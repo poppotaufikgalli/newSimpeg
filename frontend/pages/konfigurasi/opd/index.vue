@@ -39,12 +39,12 @@ const opdSemua = computed({
 
 const doAdd = (id) => {
 	const sid = $encodeBase64(null)
-	navigateTo({ path: '/referensi/opd/'+sid, query: {parent: id} })
+	navigateTo({ path: '/konfigurasi/opd/'+sid, query: {parent: id} })
 }
 
 const doData = (id) => {
 	const sid = $encodeBase64(id)
-	navigateTo({ path: '/referensi/opd/'+sid })
+	navigateTo({ path: '/konfigurasi/opd/'+sid })
 }
 
 const doDelete = (item) => {
@@ -79,7 +79,7 @@ const callback = async(e) => {
 
 </script>
 <template>
-	<LayoutReferensi>
+	<LayoutKonfigurasi>
 		<div class="mx-auto">
 			<!-- Card -->
 			<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2">
@@ -185,5 +185,5 @@ const callback = async(e) => {
 				</div>
 			</div>
 		</div>
-	</LayoutReferensi>
+	</LayoutKonfigurasi>
 </template>
