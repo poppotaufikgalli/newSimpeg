@@ -70,7 +70,7 @@ func (u *RiwayatPangkat) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 func (u *RiwayatPangkat) AfterUpdate(tx *gorm.DB) (err error) {
-	if *u.Akhir == 1 {
+	if u.Akhir != nil && *u.Akhir == 1 {
 		Tmtpang := (u.Tmtpang).Format("2006-01-02")
 		tx.Model(&RiwayatPangkat{}).Debug().Where("nip = ? and kgolru <> ? and tmtpang <> ? and knpang <> ?", u.Nip, u.Kgolru, Tmtpang, u.Knpang).Update("akhir", 0)
 	}

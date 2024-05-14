@@ -5,10 +5,26 @@ import (
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/lpernett/godotenv"
+	"log"
+	"os"
 	"strings"
 
 	app "newSimpegAPI/app"
 )
+
+var (
+	APP_KEY string
+)
+
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	APP_KEY = os.Getenv("APP_KEY")
+}
 
 func main() {
 	e := echo.New()
@@ -22,7 +38,7 @@ func main() {
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
 			return new(app.JwtCustomClaims)
 		},
-		SigningKey: []byte("simpeg2023"),
+		SigningKey: []byte(APP_KEY),
 		Skipper: func(c echo.Context) bool {
 			if strings.HasSuffix(c.Path(), "/login") {
 				return true
@@ -61,6 +77,7 @@ func main() {
 	e.POST("/upload/bahasa/:nip", app.UploadBahasa)
 	e.POST("/upload/pendum/:nip", app.UploadPendum)
 	e.POST("/upload/diklat/:nip", app.UploadDiklat)
+	e.POST("/upload/keluarga/:nip", app.UploadKeluarga)
 
 	//pegawai
 	routePegawai := e.Group("/pegawai")
@@ -612,12 +629,20 @@ func main() {
 
 	//Singkronisasi
 	routeSingkronisasi := e.Group("/singkronisasi")
-	//routeSingkronisasi.GET("", app.FindSingkronisasi)
+	routeSingkronisasi.GET("", app.FindSingkronisasi)
+	routeSingkronisasi.GET("/:host", app.GetSingkronisasiByHost)
 	routeSingkronisasi.POST("", app.FindSingkronisasi)
 	routeSingkronisasi.POST("/new", app.CreateSingkronisasi)
-	routeSingkronisasi.POST("/updateToken", app.UpdateTokenSingkronisasi)
 	routeSingkronisasi.PUT("", app.UpdateSingkronisasi)
 	routeSingkronisasi.DELETE("", app.DeleteSingkronisasi)
+
+	routeSingkronisasiBKN := e.Group("/singkronisasi_bkn")
+	routeSingkronisasiBKN.POST("/updateToken", app.UpdateTokenSingkronisasi)
+	routeSingkronisasiBKN.GET("/getDataBKN/:page/:nip", app.GetSingkronisasiGetDataBkn)
+	routeSingkronisasiBKN.PUT("/putsDataBKN/:page", app.UpdateSingkronisasiPutDataBkn)
+	routeSingkronisasiBKN.POST("/getDocFromBkn", app.PostSinkronisasiGetDocFromBKN)
+	routeSingkronisasiBKN.PUT("/postDataBKNAK/:nip", app.UpdateSingkronisasiPutDataBknAngkaKredit)
+	routeSingkronisasiBKN.DELETE("/delDataBKNAK/:id", app.DeleteSingkronisasiDelDataBknAngkaKredit)
 
 	//Stlud
 	routeStlud := e.Group("/stlud")

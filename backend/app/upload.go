@@ -805,6 +805,36 @@ func UploadDiklat(c echo.Context) error {
 	})
 }
 
+func UploadKeluarga(c echo.Context) error {
+	nip := c.Param("nip")
+	jkeluarga := c.FormValue("jkeluarga")
+	nama_kel := c.FormValue("nama_kel")
+
+	filename, newpath, _ := doUpload(c)
+
+	if nip != "" {
+		db, _ := model.CreateCon()
+		result := db.Model(&model.RiwayatKeluarga{}).Where("nip = ? and jkeluarga = ? and nama_kel =?", nip, jkeluarga, nama_kel).Update("filename", filename)
+
+		if result.Error != nil {
+			return c.JSON(http.StatusBadRequest, result.Error.Error())
+		}
+
+		if result.RowsAffected == 0 {
+			return c.JSON(http.StatusNotFound, map[string]interface{}{
+				"statucCode": http.StatusNotFound,
+				"errors":     "Data Not Found",
+			})
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"filename":   filename,
+		"path":       newpath,
+		"statucCode": http.StatusOK,
+	})
+}
+
 func doUpload(c echo.Context) (filename, newpath string, err error) {
 	filename = c.FormValue("filename")
 	path := c.FormValue("path")

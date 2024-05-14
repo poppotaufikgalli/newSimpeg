@@ -81,15 +81,18 @@ type Pegawai struct {
 	Alkokab           *string          `json:"alkokab"`
 	Alkokec           *string          `json:"alkokec"`
 	Alkodes           *string          `json:"alkodes"`
-	Kpos              float64          `json:"kpos"`
+	Kpos              *string          `json:"kpos"`
 	Kaparpol          float64          `json:"kaparpol"`
 	NpapG             *string          `json:"npap_g"`
 	Nkarpeg           *string          `json:"nkarpeg"`
 	Naskes            *string          `json:"naskes"`
+	Bpjs              *string          `json:"bpjs"`
+	KartuAsn          *string          `json:"kartu_asn"`
 	Ntaspen           *string          `json:"ntaspen"`
 	NkarisSu          *string          `json:"nkaris_su"`
 	Npwp              *string          `json:"npwp"`
 	Nik               *string          `json:"nik"`
+	Tapera            *string          `json:"tapera"`
 	FileBmp           *string          `json:"file_bmp"`
 	Aktif             float64          `json:"aktif"`
 	Jjiwa             float64          `json:"jjiwa"`
