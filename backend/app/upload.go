@@ -1,10 +1,13 @@
 package app
 
 import (
+	"bytes"
 	_ "database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"io"
+	"mime/multipart"
 	"net/http"
 	model "newSimpegAPI/model"
 	"os"
@@ -338,7 +341,6 @@ func UploadAK(c echo.Context) error {
 
 	if nip != "" {
 		db, _ := model.CreateCon()
-		//result := db.Model(&model.RiwayatGajiberkala{}).Where("nip = ? and tmtngaj = ?", nip, tmtngaj).Update("filename", filename)
 		result := db.Model(&model.RiwayatAngkaKredit{}).Where("nip = ? and tmulai = ?", nip, tmulai).Update("filename", filename)
 
 		if result.Error != nil {
@@ -868,4 +870,136 @@ func doUpload(c echo.Context) (filename, newpath string, err error) {
 	}
 
 	return
+}
+
+func UploadDokRwBKN(c echo.Context) error {
+	//nip := c.Param("nip")
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"statucCode": http.StatusBadRequest,
+			"pos":        "file not found",
+			"errors":     err.Error(),
+		})
+	}
+
+	db, _ := model.CreateCon()
+	var singkronisasi model.Singkronisasi
+	host := "bkn"
+
+	db.Model(&model.Singkronisasi{Host: &host}).First(&singkronisasi)
+
+	url := "https://apimws.bkn.go.id:8243/apisiasn/1.0/upload-dok-rw"
+
+	payload := &bytes.Buffer{}
+	writer := multipart.NewWriter(payload)
+
+	src, err := file.Open()
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer src.Close()
+
+	part, err := writer.CreateFormFile("file", file.Filename)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	_, err = io.Copy(part, src)
+	if err != nil {
+		fmt.Println(err)
+		//return
+	}
+
+	//part.Write(fileContents)
+
+	_ = writer.WriteField("id_riwayat", c.FormValue("idSync"))
+	_ = writer.WriteField("id_ref_dokumen", c.FormValue("id_ref_dokumen"))
+
+	writer.Close()
+
+	/*out, err := json.Marshal(map[string]interface{}{
+		"id_riwayat":     c.FormValue("idSync"),
+		"id_ref_dokumen": c.FormValue("id_ref_dokumen"),
+		"file":           c.FormFile("file"),
+	})*/
+
+	//fmt.Println(body)
+
+	/*if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"statucCode": http.StatusBadRequest,
+			"pos":        "A",
+			"errors":     err.Error(),
+		})
+	}*/
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", url, payload)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"statucCode": http.StatusBadRequest,
+			"pos":        "B",
+			"errors":     err.Error(),
+		})
+	}
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	d := fmt.Sprintf("bearer %v", *singkronisasi.TokenApimanager)
+	e := fmt.Sprintf("Bearer %v", *singkronisasi.TokenSso)
+
+	//fmt.Println(d)
+	//fmt.Println(e)
+
+	req.Header.Add("Auth", d)
+	req.Header.Add("Authorization", e)
+
+	res, err := client.Do(req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"statucCode": http.StatusBadRequest,
+			"pos":        "C",
+			"errors":     err.Error(),
+		})
+	}
+	defer res.Body.Close()
+
+	//fmt.Println(req)
+
+	/*bodyBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+	bodyString := string(bodyBytes)
+	fmt.Println(bodyString)*/
+
+	type ReturnBKNStatus struct {
+		Code        int    `json:"code"`
+		Description string `json:"description"`
+		Message     string `json:"message"`
+		Success     bool   `json:"success"`
+	}
+
+	var retData ReturnBKNStatus
+
+	err = json.NewDecoder(res.Body).Decode(&retData)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"statucCode": http.StatusBadRequest,
+			"errors":     err.Error(),
+		})
+	}
+
+	riwayat_update_bkn := &model.RiwayatUpdateBKN{
+		Deskripsi: "Upload Dokumen PAK",
+		CreatedBy: fmt.Sprint(c.Get("nip")),
+		Code:      fmt.Sprintf("%v", retData.Code),
+		Message:   retData.Message,
+	}
+
+	db.Model(&model.RiwayatUpdateBKN{}).Create(&riwayat_update_bkn)
+
+	return c.JSON(http.StatusOK, retData)
 }

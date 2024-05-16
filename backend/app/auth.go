@@ -22,6 +22,7 @@ import (
 var (
 	SIAP_AUTH_API       string
 	SIAP_REST_API_TOKEN string
+	APP_KEY             string
 )
 
 type JwtCustomClaims struct {
@@ -39,6 +40,7 @@ func init() {
 	SIAP_AUTH_API = os.Getenv("SIAP_AUTH_API")
 	//SIAP_AUTH_API = os.Getenv("SIAP_AUTH_API_DEV")
 	SIAP_REST_API_TOKEN = os.Getenv("SIAP_REST_API_TOKEN")
+	APP_KEY = os.Getenv("APP_KEY")
 }
 
 func UserInfo(nip, token_id string) (result model.UsersToken, RowsAffected int64) {
@@ -78,7 +80,7 @@ func Login(c echo.Context) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte("simpeg2023"))
+	t, err := token.SignedString([]byte(APP_KEY))
 	if err != nil {
 		return err
 	}

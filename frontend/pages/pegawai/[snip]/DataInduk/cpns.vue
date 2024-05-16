@@ -144,7 +144,7 @@ const tsttpp = computed({
 const showSpinner = ref(false)
 const toast = useToast()
 
-async function simpanData(e) {
+async function simpanData(lvl) {
 	showSpinner.value = true
 
 	var compacted = dataCpns.value;
@@ -214,6 +214,51 @@ async function simpanData(e) {
 		}
 	}
   	showSpinner.value = false
+
+  	if(lvl == 2){
+  		//save cpns bkn
+  		let dataCpnsBkn = {
+  			nomor_sk_cpns : dataCpns.value.nskpang,
+			nomor_spmt	: dataCpns.value.nomor_spmt,
+			nomor_sttpl	: dataCpns.value.nsttpp,
+			pertek_cpns_pns_l2th_nomor	: dataCpns.value.nntbakn,
+			pertek_cpns_pns_l2th_tanggal	: dataCpns.value.tntbakn,
+			//pns_orang_id	:dataCpns.value.no_ref_bkn,
+			status_cpns_pns	: "cpns",
+			tgl_sk_cpns	: dataCpns.value.tskpang,
+			tgl_sttpl	: dataCpns.value.tsttpp,
+  		}
+
+	    let nip = $decodeBase64(snip)
+	    var {data, error} = await useFetch('/api/puts/singkronisasi_bkn/putsDataBKNCpns/'+nip, {
+	        method: 'POST',
+	        body: JSON.stringify(dataCpnsBkn),
+	    })
+
+	    console.log(data.value)
+	    console.log(error.value)
+
+	    if(data.value.success){
+	    	compacted.idSync = data.value?.mapData?.rwAngkaKreditId;
+	    }
+
+	    if(error.value){
+	        toast.add({
+	            id: 'error_put_singkronisasi_ak',
+	            description: error.value.data.data,
+	            timeout: 6000,
+	            color: 'red',
+	        })  
+	    }else{
+	        toast.add({
+	            id: 'success_post_singkronisasi_ak',
+	            description: data.value.success == true ? "Data BKN Update Success |" : "Data BKN Update Failed |"  +data.value.message,
+		    	timeout: 6000,
+		    	color:  data.value.success == "1" ? 'green' : 'red',
+	        })  
+	    }
+  		//end save cpns bkn
+  	}
 
   	refreshNuxtData(["getDataRef", "getDataCPNS"])
 }
@@ -400,19 +445,25 @@ const callback = async(e) => {
 
 					</div>
 					<div class="mt-5 grid sm:grid-cols-12 gap-x-2">
-						<div class="sm:col-span-6 sm:col-start-4">
+						<div class="sm:col-span-7 sm:col-start-4">
 							<div class="sm:flex gap-2">
 								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" @click="refresh">
 					  				Batal
 								</button>
-								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData">
-					  				{{method}} Data
+								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(0)">
+					  				{{method}} Data [0]
+								</button>	
+								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(1)">
+					  				{{method}} Data [1]
+								</button>	
+								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(2)">
+					  				{{method}} Data [2]
 								</button>	
 							</div>
 						</div>
 						<!-- End Col -->
 
-						<div class="sm:col-span-3 flex justify-end" v-if="method == 'Update'">
+						<div class="sm:col-span-2 flex justify-end" v-if="method == 'Update'">
 							<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none" v-on:click="doUploadDoc()">
 				  				Upload File
 							</button>

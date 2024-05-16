@@ -79,6 +79,8 @@ func main() {
 	e.POST("/upload/diklat/:nip", app.UploadDiklat)
 	e.POST("/upload/keluarga/:nip", app.UploadKeluarga)
 
+	e.POST("/upload/dokRwBkn/:nip", app.UploadDokRwBKN)
+
 	//pegawai
 	routePegawai := e.Group("/pegawai")
 	routePegawai.GET("", app.FindPegawai)
@@ -637,11 +639,13 @@ func main() {
 	routeSingkronisasi.DELETE("", app.DeleteSingkronisasi)
 
 	routeSingkronisasiBKN := e.Group("/singkronisasi_bkn")
+	routeSingkronisasiBKN.POST("/riwayat", app.GetSingkronisasiRiwayat)
 	routeSingkronisasiBKN.POST("/updateToken", app.UpdateTokenSingkronisasi)
 	routeSingkronisasiBKN.GET("/getDataBKN/:page/:nip", app.GetSingkronisasiGetDataBkn)
-	routeSingkronisasiBKN.PUT("/putsDataBKN/:page", app.UpdateSingkronisasiPutDataBkn)
+	routeSingkronisasiBKN.PUT("/putsDataBKN/:page", app.UpdateSingkronisasiPutDataUtamaBkn)
 	routeSingkronisasiBKN.POST("/getDocFromBkn", app.PostSinkronisasiGetDocFromBKN)
-	routeSingkronisasiBKN.PUT("/postDataBKNAK/:nip", app.UpdateSingkronisasiPutDataBknAngkaKredit)
+	routeSingkronisasiBKN.PUT("/putsDataBKNAK/:nip", app.UpdateSingkronisasiPutDataBknAngkaKredit)
+	routeSingkronisasiBKN.PUT("/putsDataBKNCpns/:nip", app.UpdateSingkronisasiPutDataBknCpns)
 	routeSingkronisasiBKN.DELETE("/delDataBKNAK/:id", app.DeleteSingkronisasiDelDataBknAngkaKredit)
 
 	//Stlud

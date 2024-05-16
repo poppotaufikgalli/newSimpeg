@@ -7,6 +7,8 @@ const { fileBlob } = storeToRefs(modalUploadDoc)
 const { $decodeBase64, $encodeBase64 } = useNuxtApp()
 const route = useRoute()
 const dayjs = useDayjs()
+const showSpinner = ref(false)
+const toast = useToast()
 const {snip, stmulai} = route.params
 
 const dataRefAngkaKredit = ref({
@@ -27,6 +29,7 @@ const dataAngkaKredit = ref({
 	tambahan: 0,
 	total: 0,
 	filename: '',
+	idSync:'',
 })
 
 const jabfungs = ref([])
@@ -56,10 +59,19 @@ const refJabfung = ref(null)
 const refJnsAK = ref(null)
 const method = ref('Simpan')
 
+const refDataBkn = ref({
+	"id": "idSync",
+    "kreditBaruTotal": "total",
+    "kreditPenunjangBaru": "tambahan",
+    "kreditUtamaBaru": "utama",
+    "nomorSk": "nsk",
+    "tanggalSk": "tsk",
+})
+
 const { pending: pendingRef, data: dataRef, refresh: refreshDataRef } = await useLazyAsyncData('getDataRef', async () => {
 	//loading.value = true
 	let nip = $decodeBase64(snip)
-  	const [jabfung, jenisJenjang] = await Promise.all([
+  	const [jabfung] = await Promise.all([
   		$fetch(`/api/posts/riwayat_jabatan/`, {
   			method: 'POST',
   			body: JSON.stringify({
@@ -67,7 +79,6 @@ const { pending: pendingRef, data: dataRef, refresh: refreshDataRef } = await us
   				jnsjab: "2",
   			})
   		}),
-    	$fetch('/api/gets/jenjang_jabfung'),
   	])
 
   	jabfungs.value = jabfung
@@ -99,11 +110,6 @@ const { pending, data, refresh} = await useAsyncData('getdataAngkaKreditAkhir', 
 			dataRefAngkaKredit.value = _pickBy(result, function(val, key) {
 				return _includes(_keys(dataRefAngkaKredit.value), key);
 			})
-
-			//selopd.value = result.id_opd
-			//seljnsjab.value = result.jnsjab
-			//selkjab.value = result.kjab
-			//CariJabatanNonFormasi()
 		}
 	}
 })
@@ -119,7 +125,7 @@ const tsk = computed({
 
 const tmulai = computed({
 	get(){
-		return dayjs(dataAngkaKredit.value.tmulai).format("YYYY-MM-DD").toString()
+		return dayjs(dataAngkaKredit.value.tmulai).format("YYYY-MM").toString()
 	},
 	set(val){
 		dataAngkaKredit.value.tmulai = val
@@ -128,7 +134,7 @@ const tmulai = computed({
 
 const tselesai = computed({
 	get(){
-		return dayjs(dataAngkaKredit.value.tselesai).format("YYYY-MM-DD").toString()
+		return dayjs(dataAngkaKredit.value.tselesai).format("YYYY-MM").toString()
 	},
 	set(val){
 		dataAngkaKredit.value.tselesai = val
@@ -152,20 +158,50 @@ function resetJab() {
 	//refreshNuxtData(["getDataRef", "getdataAngkaKreditAkhir", "getListdataAngkaKredit"])
 }
 
-const showSpinner = ref(false)
-const toast = useToast()
-
-async function simpanData() {
+async function simpanData(lvl) {
 	showSpinner.value = true
 
 	var compacted = _pickBy(dataAngkaKredit.value);
 	compacted.tsk = compacted.tsk ? dayjs(dayjs(compacted.tsk, "YYYY-MM-DD")).format("YYYY-MM-DD[T]HH:mm:ss[Z]") : null
-	compacted.tmulai = compacted.tmulai ? dayjs(dayjs(compacted.tmulai, "YYYY-MM-DD")).format("YYYY-MM-DD[T]HH:mm:ss[Z]") : null
-	compacted.tselesai = compacted.tselesai ? dayjs(dayjs(compacted.tselesai, "YYYY-MM-DD")).format("YYYY-MM-DD[T]HH:mm:ss[Z]") : null
+	compacted.tmulai = compacted.tmulai ? dayjs(dayjs(compacted.tmulai, "YYYY-MM")).format("YYYY-MM-DD[T]HH:mm:ss[Z]") : null
+	compacted.tselesai = compacted.tselesai ? dayjs(dayjs(compacted.tselesai, "YYYY-MM")).format("YYYY-MM-DD[T]HH:mm:ss[Z]") : null
 
-	compacted.utama = compacted.utama *1
-	compacted.tambahan = compacted.tambahan *1
-	compacted.total = compacted.total *1
+	compacted.utama = compacted.utama ? compacted.utama *1 : 0
+	compacted.tambahan = compacted.tambahan ? compacted.utama *1 : 0
+	compacted.total = compacted.total ? compacted.total *1 : 0
+
+	if(lvl == 2){
+		let body = compacted
+
+	    let nip = $decodeBase64(snip)
+	    var {data, error} = await useFetch('/api/puts/singkronisasi_bkn/putsDataBKNAK/'+nip, {
+	        method: 'POST',
+	        body: body,
+	    })
+
+	    console.log(data.value)
+	    console.log(error.value)
+
+	    if(data.value.success){
+	    	compacted.idSync = data.value?.mapData?.rwAngkaKreditId;
+	    }
+
+	    if(error.value){
+	        toast.add({
+	            id: 'error_put_singkronisasi_ak',
+	            description: error.value.data.data,
+	            timeout: 6000,
+	            color: 'red',
+	        })  
+	    }else{
+	        toast.add({
+	            id: 'success_post_singkronisasi_ak',
+	            description: data.value.success == true ? "Data BKN Update Success |" : "Data BKN Update Failed |"  +data.value.message,
+		    	timeout: 6000,
+		    	color:  data.value.success == "1" ? 'green' : 'red',
+	        })  
+	    }
+	}
 
 	var dr = dataRefAngkaKredit.value
 	//dr.kgolru = dr.kgolru *1
@@ -218,6 +254,7 @@ async function simpanData() {
 		  	}) 	
 		}
 	}
+
   	showSpinner.value = false
   	refreshNuxtData(["getDataRef"])
 }
@@ -241,7 +278,8 @@ const callback = async(e) => {
 		let formData = new FormData();
 		let nip = $decodeBase64(snip)
 
-		formData.append("tmulai", tmulai.value);
+		let xmulai = $decodeBase64(stmulai)
+		formData.append("tmulai", xmulai);
 		formData.append("file", fileBlob.value[0]);
 		formData.append("filename", nip+"_angka_kredit"+tmulai.value);
 		formData.append("path", 'dokumen/'+nip);
@@ -265,9 +303,43 @@ const callback = async(e) => {
 		  	}) 	
 		}
 
-		refreshNuxtData(["getDataRef", "getdataAngkaKreditAkhir"])
+		//upload to BKN
+
+		if(dataAngkaKredit.value.idSync != ""){
+			let formDataBkn = new FormData();
+			formDataBkn.append("file", fileBlob.value[0]);
+			formDataBkn.append("idSync", dataAngkaKredit.value.idSync);
+			formDataBkn.append("id_ref_dokumen", 879);
+
+			var {data, error} = await useFetch(`/api/uploads/upload/dokRwBkn/${nip}`, {
+				method: 'POST',
+				body: formDataBkn,
+			});	
+
+			console.log(error.value)
+			console.log(data.value)
+
+			if(error.value){
+		        toast.add({
+		            id: 'error_post_upload_ak_bkn',
+		            description: error.value.data.data,
+		            timeout: 6000,
+		            color: 'red',
+		        })  
+		    }else{
+		        toast.add({
+		            id: 'success_post_upload_ak_bkn',
+		            description: data.value.data.code == 1 ? "Dokumen Angka Kredit BKN Upload Success |" +data.value.data.message : "Dokumen Angka Kredit BKN Upload Failed |"  +data.value.data.message,
+			    	timeout: 6000,
+			    	color:  data.value.data.code == 1 ? 'green' : 'red',
+		        })  
+		    }
+		}
+
+		//end upload to BKN
 
 		showSpinner.value = false
+		refreshNuxtData(["getDataRef", "getdataAngkaKreditAkhir"])
 	}
 }
 
@@ -277,6 +349,10 @@ function onlyNumber ($event) {
    	if ((keyCode < 48 || keyCode > 57) && keyCode !== 46) { // 46 is dot
     	$event.preventDefault();
    	}
+}
+
+const doRefresh = () => {
+	refreshNuxtData(["getDataRef", "getdataAngkaKreditAkhir"])
 }
 </script>
 <template>
@@ -333,60 +409,57 @@ function onlyNumber ($event) {
 						</div>
 						<!-- End Col -->
 
-						<div class="sm:col-span-9">
+						<div class="sm:col-span-7">
 							<SearchSelect2 ref="refJnsAK" id="jnsAks" :options="jnsAks" keyList="id" namaList="nama" v-model="dataAngkaKredit.jns"/>
 						</div>
+						<template v-if="dataAngkaKredit.jns == 'Konversi'">
+							<div class="sm:col-span-2">
+								<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataAngkaKredit.thn" placeholder="Tahun Konversi" required>
+							</div>
+						</template>
 						<!-- End Col -->
 
-						<div class="sm:col-span-3">
+						<div class="sm:col-span-12 my-2 first:pt-0 last:pb-0 border-t first:border-transparent border-gray-200"></div>
+
+						<div class="sm:col-span-3 sm:col-start-1">
 							<label class="inline-block text-sm text-gray-800 mt-2.5">Priode Penilaian</label>
 						</div>
 						<!-- End Col -->
 
 						<div class="sm:col-span-9">
 							<div class="sm:flex gap-2">
-								<input type="date" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tmulai">
+								<input type="month" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tmulai">
 								<label class="inline-block text-sm text-gray-800 mt-2.5">s/d</label>
-								<input type="date" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tselesai">
+								<input type="month" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tselesai">
 							</div>
 						</div>
 						<!-- End Col -->
 
-						<div class="sm:col-span-3">
-							<label class="inline-block text-sm text-gray-800 mt-2.5">Tahun</label>
-						</div>
-						<!-- End Col -->
-
-						<div class="sm:col-span-3">
-							<div class="sm:flex gap-2">
-								<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataAngkaKredit.thn">
+						<template v-if="(_includes(['Pertama', 'Lanjutan'], dataAngkaKredit.jns))">
+							<div class="sm:col-span-3 sm:col-start-1">
+								<label class="inline-block text-sm text-gray-800 mt-2.5">Angka Kredit Utama</label>
 							</div>
-						</div>
-						<!-- End Col -->
+							<!-- End Col -->
 
-						<div class="sm:col-span-3 sm:col-start-1">
-							<label class="inline-block text-sm text-gray-800 mt-2.5">Angka Kredit Utama</label>
-						</div>
-						<!-- End Col -->
-
-						<div class="sm:col-span-3">
-							<div class="sm:flex gap-2">
-								<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataAngkaKredit.utama" @keypress="onlyNumber">
+							<div class="sm:col-span-3">
+								<div class="sm:flex gap-2">
+									<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataAngkaKredit.utama" @keypress="onlyNumber">
+								</div>
 							</div>
-						</div>
-						<!-- End Col -->
+							<!-- End Col -->
 
-						<div class="sm:col-span-3">
-							<label class="inline-block text-sm text-gray-800 mt-2.5">Angka Kredit Tambahan</label>
-						</div>
-						<!-- End Col -->
-
-						<div class="sm:col-span-3">
-							<div class="sm:flex gap-2">
-								<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataAngkaKredit.tambahan" @keypress="onlyNumber">
+							<div class="sm:col-span-3">
+								<label class="inline-block text-sm text-gray-800 mt-2.5">Angka Kredit Penunjang</label>
 							</div>
-						</div>
-						<!-- End Col -->
+							<!-- End Col -->
+
+							<div class="sm:col-span-3">
+								<div class="sm:flex gap-2">
+									<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataAngkaKredit.tambahan" @keypress="onlyNumber">
+								</div>
+							</div>
+							<!-- End Col -->
+						</template>
 
 						<div class="sm:col-span-3">
 							<label class="inline-block text-sm text-gray-800 mt-2.5">Total Angka Kredit</label>
@@ -401,19 +474,25 @@ function onlyNumber ($event) {
 						<!-- End Col -->
 					</div>
 					<div class="mt-5 grid sm:grid-cols-12 gap-x-2">
-						<div class="sm:col-span-6 sm:col-start-4">
+						<div class="sm:col-span-7 sm:col-start-4">
 							<div class="sm:flex gap-2">
-								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" @click="refresh">
+								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" @click="doRefresh">
 					  				Batal
 								</button>
-								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData">
-					  				{{method}} Data
+								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(0)">
+					  				{{method}} Data [0]
+								</button>	
+								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(1)">
+					  				{{method}} Data [1]
+								</button>	
+								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(2)">
+					  				{{method}} Data [2]
 								</button>	
 							</div>
 						</div>
 						<!-- End Col -->
 
-						<div class="sm:col-span-3 flex justify-end" v-if="method == 'Update'">
+						<div class="sm:col-span-2 flex justify-end" v-if="method == 'Update'">
 							<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none" v-on:click="doUploadDoc()">
 				  				Upload File
 							</button>

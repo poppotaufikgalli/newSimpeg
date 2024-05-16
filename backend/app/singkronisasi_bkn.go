@@ -139,6 +139,21 @@ func getTokenApiManager(ClientId, Username, Password string) (res model.ResultTo
 	return
 }
 
+func GetSingkronisasiRiwayat(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var riwayat_update_bkn []model.RiwayatUpdateBKN
+
+	nip := fmt.Sprint(c.Get("nip"))
+
+	db.Model(&model.RiwayatUpdateBKN{}).Where("created_by", nip).Scan(&riwayat_update_bkn)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       riwayat_update_bkn,
+		"statucCode": http.StatusOK,
+	})
+}
+
 func GetSingkronisasiGetDataBkn(c echo.Context) error {
 	db, _ := model.CreateCon()
 
@@ -187,7 +202,7 @@ func GetSingkronisasiGetDataBkn(c echo.Context) error {
 	})
 }
 
-func UpdateSingkronisasiPutDataBkn(c echo.Context) error {
+func UpdateSingkronisasiPutDataUtamaBkn(c echo.Context) error {
 	db, _ := model.CreateCon()
 
 	validate := validator.New()
@@ -271,6 +286,18 @@ func UpdateSingkronisasiPutDataBkn(c echo.Context) error {
 			"errors":     err.Error(),
 		})
 	}
+	fmt.Println(retData)
+	//log data
+	code := fmt.Sprintf("%v", retData["code"])
+	riwayat_update_bkn := &model.RiwayatUpdateBKN{
+		Deskripsi: "Update Data Utama/Identitas",
+		CreatedBy: fmt.Sprint(c.Get("nip")),
+		Code:      code,
+		Content:   string(out),
+		Message:   retData["message"].(string),
+	}
+
+	db.Model(&model.RiwayatUpdateBKN{}).Create(&riwayat_update_bkn) // pass pointer of data to Create
 
 	//end doupdate
 
@@ -394,6 +421,8 @@ func UpdateSingkronisasiPutDataBknAngkaKredit(c echo.Context) error {
 		})
 	}
 
+	fmt.Println(err)
+
 	db.First(&pegawai, "nip = ?", nip)
 
 	updatas := &model.UpdateAngkaKreditBKN{
@@ -462,9 +491,20 @@ func UpdateSingkronisasiPutDataBknAngkaKredit(c echo.Context) error {
 			"errors":     err.Error(),
 		})
 	}
+
+	type ReturnBKNStatus struct {
+		Code        string `json:"code" default:"0"`
+		Description string `json:"description"`
+		Message     string `json:"message"`
+		Success     bool   `json:"success"`
+		MapData     struct {
+			RwAngkaKreditId string `json:"rwAngkaKreditId"`
+		} `json:"mapData"`
+	}
+
 	defer res.Body.Close()
 
-	var respData map[string]interface{}
+	var respData ReturnBKNStatus
 
 	err = json.NewDecoder(res.Body).Decode(&respData)
 	if err != nil {
@@ -475,7 +515,160 @@ func UpdateSingkronisasiPutDataBknAngkaKredit(c echo.Context) error {
 		})
 	}
 
-	//end doupdate
+	fmt.Println(respData)
+
+	//log data
+	/*code := respData["code"].(string)*/
+	if respData.Success {
+		respData.Code = "1"
+	}
+
+	riwayat_update_bkn := &model.RiwayatUpdateBKN{
+		Deskripsi: "Riwayat Angka Kredit",
+		CreatedBy: fmt.Sprint(c.Get("nip")),
+		Code:      respData.Code,
+		Content:   string(out),
+		Message:   respData.Message,
+	}
+
+	db.Model(&model.RiwayatUpdateBKN{}).Create(&riwayat_update_bkn) // pass pointer of data to Create
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       respData,
+		"statucCode": http.StatusOK,
+	})
+}
+
+func UpdateSingkronisasiPutDataBknCpns(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	nip := c.Param("nip")
+
+	var retData model.RiwayatAngkaKredit
+	//var toSendData model.UpdateAngkaKreditBKN
+	var pegawai model.Pegawai
+	var singkronisasi model.Singkronisasi
+	host := "bkn"
+
+	err := json.NewDecoder(c.Request().Body).Decode(&retData)
+	if err != nil {
+		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
+			"statucCode": http.StatusNotImplemented,
+			"errors":     err.Error(),
+		})
+	}
+
+	fmt.Println(err)
+
+	db.First(&pegawai, "nip = ?", nip)
+
+	updatas := &model.UpdateAngkaKreditBKN{
+		PnsId:                  *pegawai.NoRefBkn,
+		BulanMulaiPenilaian:    fmt.Sprintf("%v", int(retData.Tmulai.Month())),
+		TahunMulaiPenailan:     fmt.Sprintf("%v", retData.Tmulai.Year()),
+		BulanSelesiaiPenilaian: fmt.Sprintf("%v", int(retData.Tselesai.Month())),
+		TahunSelesaiPenailan:   fmt.Sprintf("%v", retData.Tselesai.Year()),
+		KreditBaruTotal:        fmt.Sprintf("%v", *retData.Total),
+		KreditPenunjangBaru:    fmt.Sprintf("%v", *retData.Tambahan),
+		KreditUtamaBaru:        fmt.Sprintf("%v", retData.Utama),
+		NomorSk:                *retData.Nsk,
+		TanggalSk:              fmt.Sprintf("%v", retData.Tsk.Format("02-01-2006")),
+	}
+
+	if retData.Jns == "Pertama" {
+		updatas.IsAngkaKreditPertama = "1"
+	} else if retData.Jns == "Integrasi" {
+		updatas.IsIntegrasi = "1"
+	} else if retData.Jns == "Konversi" {
+		updatas.IsKonversi = "1"
+	}
+
+	//start update
+	db.Model(&model.Singkronisasi{Host: &host}).First(&singkronisasi)
+
+	url := fmt.Sprintf("https://apimws.bkn.go.id:8243/apisiasn/1.0/angkakredit/save")
+
+	out, err := json.Marshal(updatas)
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"statucCode": http.StatusBadRequest,
+			"pos":        "A",
+			"errors":     err.Error(),
+		})
+	}
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("POST", url, bytes.NewReader(out))
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"statucCode": http.StatusBadRequest,
+			"pos":        "B",
+			"errors":     err.Error(),
+		})
+	}
+	req.Header.Add("accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+	d := fmt.Sprintf("bearer %v", *singkronisasi.TokenApimanager)
+	e := fmt.Sprintf("Bearer %v", *singkronisasi.TokenSso)
+
+	//fmt.Println(d)
+	//fmt.Println(e)
+
+	req.Header.Add("Auth", d)
+	req.Header.Add("Authorization", e)
+
+	res, err := client.Do(req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"statucCode": http.StatusBadRequest,
+			"pos":        "C",
+			"errors":     err.Error(),
+		})
+	}
+
+	type ReturnBKNStatus struct {
+		Code        string `json:"code" default:"0"`
+		Description string `json:"description"`
+		Message     string `json:"message"`
+		Success     bool   `json:"success"`
+		MapData     struct {
+			RwAngkaKreditId string `json:"rwAngkaKreditId"`
+		} `json:"mapData"`
+	}
+
+	defer res.Body.Close()
+
+	var respData ReturnBKNStatus
+
+	err = json.NewDecoder(res.Body).Decode(&respData)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"statucCode": http.StatusBadRequest,
+			"pos":        "D",
+			"errors":     err.Error(),
+		})
+	}
+
+	fmt.Println(respData)
+
+	//log data
+	/*code := respData["code"].(string)*/
+	if respData.Success {
+		respData.Code = "1"
+	}
+
+	riwayat_update_bkn := &model.RiwayatUpdateBKN{
+		Deskripsi: "Riwayat Angka Kredit",
+		CreatedBy: fmt.Sprint(c.Get("nip")),
+		Code:      respData.Code,
+		Content:   string(out),
+		Message:   respData.Message,
+	}
+
+	db.Model(&model.RiwayatUpdateBKN{}).Create(&riwayat_update_bkn) // pass pointer of data to Create
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data":       respData,
@@ -493,16 +686,6 @@ func DeleteSingkronisasiDelDataBknAngkaKredit(c echo.Context) error {
 	db.Model(&model.Singkronisasi{Host: &host}).First(&singkronisasi)
 
 	url := fmt.Sprintf("https://apimws.bkn.go.id:8243/apisiasn/1.0/angkakredit/delete/%s", id)
-
-	/*out, err := json.Marshal(updatas)
-
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
-			"pos":        "A",
-			"errors":     err.Error(),
-		})
-	}*/
 
 	client := &http.Client{}
 
@@ -547,11 +730,23 @@ func DeleteSingkronisasiDelDataBknAngkaKredit(c echo.Context) error {
 		})
 	}
 
+	//log data
+	code := "0"
+	if respData["success"].(bool) {
+		code = "1"
+	}
+	riwayat_update_bkn := &model.RiwayatUpdateBKN{
+		Deskripsi: "Delete Riwayat Angka Kredit",
+		CreatedBy: fmt.Sprint(c.Get("nip")),
+		Code:      code,
+		Message:   respData["message"].(string),
+	}
+
+	db.Model(&model.RiwayatUpdateBKN{}).Create(&riwayat_update_bkn) // pass pointer of data to Create
 	//end doupdate
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data":       respData,
 		"statucCode": http.StatusOK,
 	})
-
 }

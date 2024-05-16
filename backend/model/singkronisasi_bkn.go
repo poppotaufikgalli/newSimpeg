@@ -1,11 +1,29 @@
 package model
 
-import ()
+import (
+	"time"
+)
+
+func (RiwayatUpdateBKN) TableName() string {
+	return "master_riwayat_update_bkn"
+}
+
+type RiwayatUpdateBKN struct {
+	ID        uint       `gorm:"primaryKey;autoIncrement:false" json:"id" validate:"required"`
+	Deskripsi string     `json:"deskripsi"`
+	Content   string     `json:"content"`
+	Code      string     `json:"code"`
+	Message   string     `json:"message"`
+	CreatedBy string     `gorm:"<-:create" json:"created_by"`
+	CreatedAt *time.Time `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
+	UpdatedBy string     `gorm:"<-:update" json:"updated_by"`
+	UpdatedAt *time.Time `gorm:"<-:update" json:"updated_at"` // Automatically managed by GORM for update time
+}
 
 type UpdateBKNDataUtama struct {
 	NoRefBkn          string `json:"pns_orang_id" validate:"required"`
 	Kagama            string `json:"agama_id,omitempty"`
-	Alamat            string `json:"alamat,omitempty"`
+	Aljalan           string `json:"alamat,omitempty"`
 	Email             string `json:"email,omitempty"`
 	EmailPemerintahan string `json:"email_gov,omitempty"`
 	NkarisSu          string `json:"karis_karsu,omitempty"`

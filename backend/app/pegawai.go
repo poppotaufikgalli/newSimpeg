@@ -123,7 +123,6 @@ func FindListPegawai(c echo.Context) error {
 	var searchGroup []string
 	//nip
 	if searchString.Nip != "" {
-		//result = result.Where("master_pegawai.nip = ?", searchString.Nip)
 		searchGroup = append(searchGroup, fmt.Sprintf("a.nip = %s", searchString.Nip))
 	}
 
@@ -132,7 +131,6 @@ func FindListPegawai(c echo.Context) error {
 		IdOpd := strings.TrimSpace(searchString.IdOpd)
 		str := []string{IdOpd, "%"}
 		searchGroup = append(searchGroup, fmt.Sprintf("b.id_opd LIKE '%s'", strings.Join(str, "")))
-		//findJabatan = append(findJabatan, fmt.Sprintf("and master_riwayat_jabatan.id_opd = '%s'", searchString.IdOpd))
 	}
 
 	//id_eselon
@@ -142,8 +140,6 @@ func FindListPegawai(c echo.Context) error {
 
 	//jnsjab
 	if searchString.Jnsjab > 0 {
-		//jnsjab := strings.Trim(strings.Replace(fmt.Sprint(searchString.Jnsjab), " ", ",", -1), "[]")
-		//searchGroup = append(searchGroup, fmt.Sprintf("b.jnsjab IN (%v)", jnsjab))
 		searchGroup = append(searchGroup, fmt.Sprintf("b.jnsjab = '%v'", searchString.Jnsjab))
 	}
 
@@ -151,27 +147,23 @@ func FindListPegawai(c echo.Context) error {
 		nama := strings.TrimSpace(searchString.Nama)
 		str := []string{"%", nama, "%"}
 		searchGroup = append(searchGroup, fmt.Sprintf("a.nama LIKE '%s'", strings.Join(str, "")))
-		//result = result.Where("master_pegawai.nama LIKE ?", strings.Join(str, ""))
 	}
 
 	//kstatus
 	if len(searchString.Kstatus) > 0 {
 		kstatus := strings.Trim(strings.Replace(fmt.Sprint(searchString.Kstatus), " ", ",", -1), "[]")
 		searchGroup = append(searchGroup, fmt.Sprintf("a.kstatus IN (%v)", kstatus))
-		//result = result.Where("master_pegawai.kstatus IN (?)", searchString.Kstatus)
 	}
 
 	//kjpeg
 	if len(searchString.Kjpeg) > 0 {
 		kjpeg := strings.Trim(strings.Replace(fmt.Sprint(searchString.Kjpeg), " ", ",", -1), "[]")
 		searchGroup = append(searchGroup, fmt.Sprintf("a.kjpeg IN (%v)", kjpeg))
-		//result = result.Where("master_pegawai.kjpeg IN (?)", searchString.Kjpeg)
 	}
 
 	//no_ref_bkn
 	if searchString.NoRefBkn != "" {
 		searchGroup = append(searchGroup, fmt.Sprintf("a.no_ref_bkn = %v", searchString.NoRefBkn))
-		//result = result.Where("master_pegawai.no_ref_bkn = ?", searchString.NoRefBkn)
 	}
 
 	search := strings.Join(searchGroup, " and ")
@@ -208,8 +200,6 @@ func CreatePegawai(c echo.Context) error {
 	pegawai.CreatedBy = fmt.Sprint(c.Get("nip"))
 	result := db.Create(&pegawai)
 
-	//fmt.Println(pegawai)
-
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, result.Error.Error())
 	}
@@ -242,8 +232,6 @@ func UpdatePegawai(c echo.Context) error {
 
 	pegawai.UpdatedBy = fmt.Sprint(c.Get("nip"))
 	result := db.Model(&model.Pegawai{}).Where("nip = ?", pegawai.Nip).Updates(&pegawai)
-
-	//fmt.Println(pegawai)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, result.Error.Error())

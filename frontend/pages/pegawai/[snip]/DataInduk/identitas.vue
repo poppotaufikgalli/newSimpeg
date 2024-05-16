@@ -60,22 +60,64 @@ const dataInduk = ref({
 	bpjs:'',
 	niplama:'',
 	tapera:'',
+});
+
+const refDataBkn = ref([
+	["nip","nipBaru",null, "NIP"],
+	["nama","nama",null, "Nama"],
+	["gldepan","gelarDepan",null, "Gelar Depan"],
+	["glblk","gelarBelakang",null, "Gelar Belakang"],
+	["ktlahir","tempatLahir",null, "Tempat Lahir"],
+	["tlahir","tglLahir",null, "Tanggal Lahir"],
+	["niplama","nipLama", null, "Nip Lama"],
+	["nik","nik",null, "NIK"],	
+    ["no_ref_bkn","id","pns_orang_id", "PNS ID"],
+    ["kagama","agamaId","agama_id", "Agama"],
+    ["aljalan","alamat","alamat", "Alamat"],
+    ["bpjs","bpjs","nomor_bpjs", "BPJS"],
+    ["email","email","email", "Email"],
+    ["email_pemerintahan","emailGov","email_gov", "Email Pemerintahan"],
+    ["kskawin","jenisKawinId",null, "Kawin"],
+    ["kjkel","jenisKelamin",null, "Jenis Kelamin"],
+    ["kartu_asn","kartuAsn",null, "Kartu ASN"],
+    ["kduduk","kedudukanPnsId",null, "Jenis Kedudukan PNS"],
+    ["nkaris_su","karis_karsu","karis_karsu", "Karis Karsu"],
+    ["kpos","kodePos",null, "Kode Pos"],
+    ["naskes","noAskes",null, "Askes"],
+    ["altelp","noTelp","nomor_telpon", "Nomor Telpon"],
+    ["altelpwa","noHp","nomor_hp", "Nomor HP"],
+    ["npwp","noNpwp","npwp_nomor", "NPWP"],
+    ["nkarpeg","noSeriKarpeg",null, "Karpeg"],
+    ["ntaspen","noTaspen","taspen_nomor", "Taspen"],
+    ["tapera","tapera","tapera_nomor", "Tapera"],
+    ["kjpeg","jenisPegawaiId",null, "Jenis Pegawai"],
+])
+
+const refUpdateBkn = ref({
+	"agama_id": "kagama",
+	"alamat": "aljalan",
+	"email": "email",
+	"email_gov": "email_pemerintahan",
+	"karis_karsu": "nkaris_su",
+	"nomor_bpjs": "bpjs",
+	"nomor_telpon": "altelp",
+	"nomor_hp": "altelpwa",
+	"npwp_nomor": "npwp",
+	"pns_orang_id": "no_ref_bkn",
+	"taspen_nomor": "ntaspen",
+	"tapera_nomor": "tapera",
 })
+
+const dataBkn = ref([])
+//const datax = ref({ "agamaId": "1", "alamat": "JL. ADI SUCIPTO KM. 11 PERUM BHUMI ANGGREK RESIDANCE BLOK G/3 TANJUNGPINANG", "bpjs": "0000161112159", "email": "taufik@live.com", "emailGov": "taufik@tanjungpinangkota.go.id", "gelarBelakang": "ST", "gelarDepan": "", "id": "A8ACA7CD3C7F3912E040640A040269BB", "jenisKawinId": "1", "jenisKelamin": "M", "jenisPegawaiId": "15", "karis_karsu": "", "kartuAsn": "A200900283492", "kedudukanPnsId": "01", "kodePos": "", "nama": "MUHAMMAD TAUFIK HIDAYAT", "nik": "2101071602860001", "nipBaru": "198602162008031001", "nipLama": "P20006592", "noAskes": "", "noHp": "085272220227", "noNpwp": "14.831.626.8-224.000", "noSeriKarpeg": "", "noTaspen": "198602162008031001", "noTelp": "085272220227", "tempatLahir": "TANJUNG UBAN", "tglLahir": "16-02-1986" })
+
+const dataDiff = ref([])
 
 const { pending, data, refresh} = await useAsyncData('getDataIdentitas', async() => {
 	console.log("getDataIdentitasIdentitas")
 	if(snip){
 		showSpinner.value = true
 		let nip = $decodeBase64(snip)
-		/*var result = await $fetch('/api/gets/pegawai/'+nip);
-
-		if(result.nip == nip){
-			method.value = "Update"
-
-			dataInduk.value = _pickBy(result, function(val, key) {
-				return _includes(_keys(dataInduk.value), key);
-			})
-		}*/
 
 		const [data_simpeg, wilayah] = await Promise.all([
 	    	$fetch('/api/gets/pegawai/'+nip),
@@ -92,9 +134,41 @@ const { pending, data, refresh} = await useAsyncData('getDataIdentitas', async()
 			})
 	  	}
 
+	  	getDataBKN()
+
+	  	/*var a = _reduce(refDataBkn.value, function(result, value, key) {
+	  		var nidx = value[0]
+		  	(result[nidx] || (result[nidx] = [])).push(value[1]);
+		  	return result;
+		}, {});*/
+	  	
 	  	showSpinner.value = false
 	}
 })
+
+async function getDataBKN(){
+	if(snip){
+		let nip = $decodeBase64(snip)
+		var result = await $fetch('/api/gets/singkronisasi_bkn/getDataBKN/data-utama/'+nip)
+		
+		dataBkn.value = result.data
+
+
+	  	dataDiff.value = _reduce(refDataBkn.value, function(result, value, key) {
+		  (result[value[3]] || (result[value[3]] = [])).push(
+		  	_find(dataBkn.value, function(val,key){
+		  		return key == value[1]
+		  	}),
+		  	_find(dataInduk.value, function(val,key){
+		  		return key == value[0]
+		  	})
+		  );
+		  return result;
+		}, {});
+
+		//console.log(dataDiff.value)
+	}
+}
 
 const agamas = ref([])
 const statuss = ref([])
@@ -121,7 +195,6 @@ const { pending: pendingRef, data: dataRef, refresh: refreshDataRef } = await us
     	$fetch('/api/gets/jenis_kawin'),
     	$fetch('/api/gets/jenis_goldar'),
     	$fetch('/api/gets/kpe'),
-    	
   	])
 
   	agamas.value = agama
@@ -228,6 +301,12 @@ const tlahir = computed({
 	}
 })
 
+const tlahir2 = computed({
+	get(){
+		return dayjs(dataInduk.value.tlahir).format("DD-MM-YYYY").toString()
+	}
+})
+
 const tgl_kpe = computed({
 	get(){
 		return dayjs(dataInduk.value.tgl_kpe).format("YYYY-MM-DD").toString()
@@ -243,6 +322,12 @@ const kjkel = computed({
 	},
 	set(val){
 		dataInduk.value.kjkel = val *1
+	}
+})
+
+const kjkel2 = computed({
+	get(){
+		return dataInduk.value.kjkel == 1 ? 'M' : 'F'
 	}
 })
 
@@ -282,7 +367,12 @@ const stat_kpe = computed({
 	}
 })
 
-async function simpanData() {
+async function simpanData(lvl) {
+
+	//1 operator opd
+	//2 admin simpeg
+	//3 update bkn
+
 	showSpinner.value = true
 
 	var compacted = _pickBy(dataInduk.value);
@@ -331,6 +421,39 @@ async function simpanData() {
 		  	const snip = $encodeBase64(compacted.nip)
 			navigateTo({ path: '/pegawai/'+snip+'/DataInduk/identitas' })
 		}
+	}
+
+	if(lvl == 2){
+		//====================update to BKN====================//
+
+		var sendDataToBKN = _pickBy(_mapValues(refUpdateBkn.value, function(val, key){
+			return _find(compacted, function(val1, key1){
+				return val == key1
+			})?.toString()
+		}))
+		
+		var {data, error} = await useFetch(`/api/puts/singkronisasi_bkn/putsDataBKN/data-utama`, {
+			method: 'PUT',
+			body: JSON.stringify(sendDataToBKN),
+		})
+
+		if(error.value){
+			toast.add({
+		    	id: 'error_put_identitas_bkn',
+		    	description: error.value.data.data,
+		    	timeout: 6000,
+		    	color: 'red',
+		  	}) 	
+		}else{
+			toast.add({
+		    	id: 'success_put_identitas_bkn',
+		    	description: data.value.code == "1" ? "Data BKN Update Success |" : "Data BKN Update Failed |"  +data.value.message,
+		    	timeout: 6000,
+		    	color:  data.value.code == "1" ? 'green' : 'red',
+		  	}) 	
+		}
+
+		//==================end update to BKN==================//
 	}
   	showSpinner.value = false
 }
@@ -389,16 +512,63 @@ const callback = async(e) => {
 		showSpinner.value = false
 	}
 }
-
+function checkBeda(key, item) {
+	var a = item[0]
+	var b = item[1]
+	if(key == 'Jenis Kelamin'){
+		a = a == 'M' ? '1' : '2'
+	}
+	if(key == 'Tanggal Lahir'){
+		b = dayjs(dayjs(b, "YYYY-MM-DD")).format("DD-MM-YYYY")
+	}
+	if(a != b){
+		return true
+	}else{
+		return false
+	}
+}
 </script>
+<style scoped>
+.match {
+  	@apply border-red-200;
+}
+</style>
 <template>
 	<AppLoadingSpinner :show="showSpinner" />
 	<LayoutDataInduk>
 		<div class="mx-auto">
 			<!-- Card -->
 			<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2">
-				<div class="mb-8">
-					<h2 class="text-xl font-bold text-blue-600">Identitas Pegawai</h2>
+				<div class="mb-4">
+					<div class="flex justify-between gap-x-2">
+						<h2 class="text-xl font-bold text-blue-600">Identitas Pegawai</h2>
+						<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="getDataBKN">
+			  				Get Data BKN
+						</button>
+					</div>
+				</div>
+				<div class="bg-red-50 border border-red-200 text-sm text-red-800 rounded-lg p-4 mb-4" role="alert">
+					<div class="flex">
+					    <div class="flex-shrink-0">
+					      	<svg class="flex-shrink-0 size-4 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					        	<circle cx="12" cy="12" r="10"></circle>
+				        		<path d="m15 9-6 6"></path>
+				        		<path d="m9 9 6 6"></path>
+					      	</svg>
+					    </div>
+					    <div class="ms-4">
+					      	<h3 class="text-sm font-semibold">
+					        	Perbedaan Data BKN
+					      	</h3>
+					      	<div class="mt-2 text-sm text-red-700">
+					        	<ul class="list-disc space-y-1 ps-5" v-if="dataDiff" v-for="(item, key) in dataDiff">
+					          		<li v-if="checkBeda(key, item)">
+					            		{{key}} - Berbeda (data BKN : {{item[0]}})
+					          		</li>
+					        	</ul>
+					      	</div>
+					    </div>
+					</div>
 				</div>
 				<div class="grid sm:grid-cols-12 gap-2 gap-2.5">
 					<div class="sm:col-span-3">
@@ -407,10 +577,10 @@ const callback = async(e) => {
 					<!-- End Col -->
 
 					<div class="sm:col-span-7">
-						<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" maxlength="18" v-model="dataInduk.nip" @keypress="onlyNumber">
+						<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" maxlength="18" v-model="dataInduk.nip" @keypress="onlyNumber" :class="dataInduk.nip != dataBkn.nipBaru ? 'border-red-200' : 'border-gray-200'">
 					</div>
 					<div class="sm:col-span-2">
-						<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.niplama">
+						<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.niplama" :class="dataInduk.niplama != dataBkn.nipLama ? 'border-red-200' : 'border-gray-200'">
 					</div>
 					<!-- End Col -->
 					<div class="sm:col-span-3">
@@ -420,7 +590,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-9">
 						<div class="sm:flex gap-2">
-							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="NIK" v-model="dataInduk.no_ref_bkn">
+							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="NIK" v-model="dataInduk.no_ref_bkn" :class="dataInduk.no_ref_bkn != dataBkn.id ? 'border-red-200' : 'border-gray-200'">
 						</div>
 					</div>
 					<!-- End Col -->
@@ -431,9 +601,7 @@ const callback = async(e) => {
 					<!-- End Col -->
 
 					<div class="sm:col-span-9">
-						<div class="sm:flex">
-							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white uppercase" v-model="dataInduk.nama">
-						</div>
+						<input type="text" class="py-2 px-3 block w-full border shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white uppercase" :class="dataInduk.nama != dataBkn.nama ? 'border-red-200' : 'border-gray-200'" v-model="dataInduk.nama">
 					</div>
 					<!-- End Col -->
 
@@ -444,8 +612,8 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-9">
 						<div class="sm:flex gap-2">
-							<input type="text" class="py-2 px-3 block w-[35%] border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="gelar depan" v-model="dataInduk.gldepan">
-							<input type="text" class="py-2 px-3 block w-[35%] border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Gelar Belakang" v-model="dataInduk.glblk">
+							<input type="text" class="py-2 px-3 block w-[35%] border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="gelar depan" v-model="dataInduk.gldepan" :class="dataInduk.gldepan != dataBkn.gelarDepan ? 'border-red-200' : 'border-gray-200'">
+							<input type="text" class="py-2 px-3 block w-[35%] border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Gelar Belakang" v-model="dataInduk.glblk" :class="dataInduk.glblk != dataBkn.gelarBelakang ? 'border-red-200' : 'border-gray-200'">
 						</div>
 					</div>
 					<!-- End Col -->
@@ -457,8 +625,8 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-9">
 		  				<div class="sm:flex gap-2">
-							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white uppercase" v-model="dataInduk.ktlahir">
-							<input type="date" class="py-2 px-3 block w-[50%] border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tlahir">
+							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white uppercase" v-model="dataInduk.ktlahir" :class="dataInduk.ktlahir != dataBkn.tempatLahir ? 'border-red-200' : 'border-gray-200'">
+							<input type="date" class="py-2 px-3 block w-[50%] border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tlahir" :class="tlahir2 != dataBkn.tglLahir ? 'border-red-200' : 'border-gray-200'">
 		  				</div>
 					</div>
 					<!-- End Col -->
@@ -470,7 +638,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
-							<select class="py-2.5 px-2 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="kjkel">
+							<select class="py-2.5 px-2 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="kjkel" :class="kjkel2 != dataBkn.jenisKelamin ? 'border-red-200' : 'border-gray-200'">
 							  	<option selected>Pilih Jenis Kelamin</option>
 							  	<option value="1">1 - Laki-laki</option>
 							  	<option value="2">2 - Perempuan</option>
@@ -486,7 +654,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
-					  		<select class="py-2.5 px-2 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="kagama">
+					  		<select class="py-2.5 px-2 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="kagama" :class="dataInduk.kagama != dataBkn.agamaId ? 'border-red-200' : 'border-gray-200'">
 							  	<option selected>Pilih Agama</option>
 							  	<template  v-for="(item, idx) in agamas" :key="idx">
 								  	<option :value="item.id">{{item.id}} - {{item.nama}}</option>
@@ -503,7 +671,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
-					  		<select class="py-2.5 px-2 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="kskawin">
+					  		<select class="py-2.5 px-2 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="kskawin" :class="dataInduk.kskawin != dataBkn.jenisKawinId ? 'border-red-200' : 'border-gray-200'">
 							  	<option selected>Pilih Status Perkawinan</option>
 							  	<template  v-for="(item, idx) in kawins" :key="idx">
 								  	<option :value="item.id">{{item.id}} - {{item.nama}}</option>
@@ -562,9 +730,7 @@ const callback = async(e) => {
 					<!-- End Col -->
 
 					<div class="sm:col-span-9">
-						<div class="sm:flex gap-2">
-							<textarea id="af-account-bio" class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" rows="3" placeholder="Alamat..." v-model="dataInduk.aljalan"></textarea>
-						</div>
+						<textarea class="py-2 px-3 block w-full border rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" rows="3" placeholder="Alamat..." v-model="dataInduk.aljalan" :class="dataInduk.aljalan != dataBkn.alamat ? 'border-red-200' : 'border-gray-200'"></textarea>
 					</div>
 					<!-- End Col -->
 
@@ -588,7 +754,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
-					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.kpos" @keypress="onlyNumber">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.kpos" @keypress="onlyNumber" :class="dataInduk.kpos != dataBkn.kodepos ? 'border-red-200' : 'border-gray-200'">
 					  	</div>
 					</div>
 					<!-- End Col -->
@@ -642,8 +808,8 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-9">
 					  	<div class="sm:flex gap-2">
-					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Nomor HP/Telpon" v-model="dataInduk.altelp" @keypress="onlyNumber">
-					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Nomor Whatsapp" v-model="dataInduk.altelpwa" @keypress="onlyNumber">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Nomor HP/Telpon" v-model="dataInduk.altelp" @keypress="onlyNumber" :class="dataInduk.altelp != dataBkn.noTelp ? 'border-red-200' : 'border-gray-200'">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Nomor Whatsapp" v-model="dataInduk.altelpwa" @keypress="onlyNumber" :class="dataInduk.altelpwa != dataBkn.noHp ? 'border-red-200' : 'border-gray-200'">
 					  	</div>
 					</div>
 					<!-- End Col -->
@@ -655,8 +821,8 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-9">
 					  	<div class="sm:flex gap-2">
-					  		<input type="email" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Email Pribadi" v-model="dataInduk.email">
-					  		<input type="email" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Email Pemerintahan" v-model="dataInduk.email_pemerintahan">
+					  		<input type="email" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Email Pribadi" v-model="dataInduk.email" :class="dataInduk.email != dataBkn.email ? 'border-red-200' : 'border-gray-200'">
+					  		<input type="email" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="Email Pemerintahan" v-model="dataInduk.email_pemerintahan" :class="dataInduk.email_pemerintahan != dataBkn.emailGov ? 'border-red-200' : 'border-gray-200'">
 					  	</div>
 					</div>
 					<!-- End Col -->
@@ -686,7 +852,7 @@ const callback = async(e) => {
 					</div>
 					<!-- End Col -->
 					<div class="sm:col-span-9">
-		        		<SearchSelect2 v-if="!pending && !pendingRef" id="duduks" :options="duduks" keyList="id" namaList="nama" v-model="dataInduk.kduduk" />
+		        		<SearchSelect2 v-if="!pending && !pendingRef" id="duduks" :options="duduks" keyList="id" namaList="nama" v-model="dataInduk.kduduk" :class="dataInduk.kduduk != dataBkn.kedudukanPnsId ? 'border-red-200' : 'border-gray-200'" />
 		        	</div>
 
 					<div class="sm:col-span-12 my-2 first:pt-0 last:pb-0 border-t first:border-transparent border-gray-200"></div>
@@ -698,7 +864,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 						<div class="sm:flex gap-2">
-							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="NIK" v-model="dataInduk.nik" @keypress="onlyNumber">
+							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="NIK" v-model="dataInduk.nik" @keypress="onlyNumber" :class="dataInduk.nik != dataBkn.nik ? 'border-red-200' : 'border-gray-200'">
 						</div>
 					</div>
 					<!-- End Col -->
@@ -710,7 +876,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 						<div class="sm:flex gap-2">
-							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="NPWP" v-model="dataInduk.npwp" @keypress="onlyNumber">
+							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" placeholder="NPWP" v-model="dataInduk.npwp" @keypress="onlyNumber" :class="dataInduk.npwp != dataBkn.noNpwp ? 'border-red-200' : 'border-gray-200'">
 						</div>
 					</div>
 					<!-- End Col -->
@@ -722,7 +888,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
-					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.nkarpeg">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.nkarpeg" :class="dataInduk.nkarpeg != dataBkn.noSeriKarpeg ? 'border-red-200' : 'border-gray-200'">
 					  	</div>
 					</div>
 					<!-- End Col -->
@@ -734,7 +900,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
-					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.nkaris_su">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.nkaris_su" :class="dataInduk.nkaris_su != dataBkn.karis_karsu ? 'border-red-200' : 'border-gray-200'">
 					  	</div>
 					</div>
 					<!-- End Col -->
@@ -746,7 +912,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
-					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.ntaspen">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg sm:mt-0 sm:first:ms-0 text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.ntaspen" :class="dataInduk.ntaspen != dataBkn.noTaspen ? 'border-red-200' : 'border-gray-200'">
 					  	</div>
 					</div>
 					<!-- End Col -->
@@ -799,7 +965,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
-					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.naskes">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.naskes" :class="dataInduk.naskes != dataBkn.noAskes ? 'border-red-200' : 'border-gray-200'">
 					  	</div>
 					</div>
 					<!-- End Col -->
@@ -811,7 +977,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
-					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.bpjs">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.bpjs" :class="dataInduk.bpjs != dataBkn.bpjs ? 'border-red-200' : 'border-gray-200'">
 					  	</div>
 					</div>
 					<!-- End Col -->
@@ -823,7 +989,7 @@ const callback = async(e) => {
 
 					<div class="sm:col-span-3">
 					  	<div class="sm:flex">
-					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.kartu_asn">
+					  		<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataInduk.kartu_asn" :class="dataInduk.kartu_asn != dataBkn.kartuAsn ? 'border-red-200' : 'border-gray-200'">
 					  	</div>
 					</div>
 					<!-- End Col -->
@@ -834,8 +1000,14 @@ const callback = async(e) => {
 					<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" @click="refresh">
 		  				Batal
 					</button>
-					<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData">
-		  				{{method}} Data
+					<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(0)">
+		  				{{method}} Data [0]
+					</button>
+					<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(1)">
+		  				{{method}} Data [1]
+					</button>
+					<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(2)">
+		  				{{method}} Data [2]
 					</button>
 	  			</div>
 	  		</div>
