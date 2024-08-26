@@ -39,7 +39,7 @@ func GetRiwayatPenghargaan(searchString model.SearchRiwayatPenghargaan) (riwayat
 		result = result.Where("master_riwayat_penghargaan.thn = ?", searchString.Thn)
 	}
 
-	result = result.Preload("JenisPenghargaan").Find(&riwayat_penghargaan)
+	result = result.Preload("JenisPenghargaan").Order("thn desc").Find(&riwayat_penghargaan)
 
 	return
 
@@ -53,7 +53,7 @@ func FindRiwayatPenghargaan(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data":       riwayat_penghargaan,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 		"count":      result.RowsAffected,
 		"filter":     searchString,
 	})
@@ -72,7 +72,7 @@ func GetRiwayatPenghargaanByNipIdNsk(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data":       riwayat_penghargaan,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})
 }
@@ -87,14 +87,16 @@ func CreateRiwayatPenghargaan(c echo.Context) error {
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
-			"statucCode": http.StatusNotImplemented,
+			"statusCode": http.StatusNotImplemented,
+			"message":    "gagal Decode JSON",
 			"errors":     err.Error(),
 		})
 	}
 
 	if err = validate.Struct(riwayat_penghargaan); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
+			"statusCode": http.StatusBadRequest,
+			"message":    "gagal Validasi JSON",
 			"errors":     err.Error(),
 		})
 	}
@@ -104,14 +106,33 @@ func CreateRiwayatPenghargaan(c echo.Context) error {
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
+			"statusCode": http.StatusBadRequest,
+			"message":    "gagal menambahkan ke DB",
 			"errors":     result.Error.Error(),
 		})
+	} else {
+		if c.Get("gid").(int) == 1 {
+			status_bkn, err := sendRiwayatPenghargaanBKN(riwayat_penghargaan, c.Get("nip").(string))
+			//fmt.Println(status_bkn)
+
+			if err != nil {
+				return c.JSON(http.StatusNotImplemented, map[string]interface{}{
+					"statusCode": http.StatusNotImplemented,
+					"errors":     err.Error(),
+				})
+			}
+			if status_bkn["success"] != true {
+				return c.JSON(http.StatusNotImplemented, map[string]string{
+					"title":       "Update Data Penghargaan BKN Gagal",
+					"description": fmt.Sprintf("%s", status_bkn["message"]),
+				})
+			}
+		}
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data":       riwayat_penghargaan,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})
 }
@@ -133,14 +154,14 @@ func UpdateRiwayatPenghargaan(c echo.Context) error {
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
-			"statucCode": http.StatusNotImplemented,
+			"statusCode": http.StatusNotImplemented,
 			"errors":     err.Error(),
 		})
 	}
 
 	if err = validate.Struct(reqData.Data); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
+			"statusCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
@@ -150,21 +171,39 @@ func UpdateRiwayatPenghargaan(c echo.Context) error {
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
+			"statusCode": http.StatusBadRequest,
 			"errors":     result.Error.Error(),
 		})
 	}
 
 	if result.RowsAffected == 0 {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{
-			"statucCode": http.StatusNotFound,
+			"statusCode": http.StatusNotFound,
 			"errors":     "Data Not Found",
 		})
+	} else {
+		if c.Get("gid").(int) == 1 {
+			status_bkn, err := sendRiwayatPenghargaanBKN(reqData.Data, c.Get("nip").(string))
+			//fmt.Println(status_bkn)
+
+			if err != nil {
+				return c.JSON(http.StatusNotImplemented, map[string]interface{}{
+					"statusCode": http.StatusNotImplemented,
+					"errors":     err.Error(),
+				})
+			}
+			if status_bkn["success"] != true {
+				return c.JSON(http.StatusNotImplemented, map[string]string{
+					"title":       "Update Data Penghargaan BKN Gagal",
+					"description": fmt.Sprintf("%s", status_bkn["message"]),
+				})
+			}
+		}
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data":       reqData.Data,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})
 }
@@ -179,14 +218,14 @@ func DeleteRiwayatPenghargaan(c echo.Context) error {
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
-			"statucCode": http.StatusNotImplemented,
+			"statusCode": http.StatusNotImplemented,
 			"errors":     err.Error(),
 		})
 	}
 
 	if err = validate.Struct(riwayat_penghargaan); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
+			"statusCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
@@ -195,13 +234,71 @@ func DeleteRiwayatPenghargaan(c echo.Context) error {
 
 	if result.RowsAffected == 0 {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{
-			"statucCode": http.StatusNotFound,
+			"statusCode": http.StatusNotFound,
 			"errors":     "Data Not Found",
 		})
+	} else {
+		if c.Get("gid").(int) == 1 {
+			resultBkn, err := DeleteSingkronisasiDataBknById("penghargaan", riwayat_penghargaan.IdSync, c.Get("nip").(string))
+
+			fmt.Println(resultBkn)
+
+			if err != nil {
+				return c.JSON(http.StatusNotImplemented, map[string]interface{}{
+					"statusCode": http.StatusNotImplemented,
+					"errors":     err.Error(),
+				})
+			}
+		}
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data":       riwayat_penghargaan,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
+}
+
+func sendRiwayatPenghargaanBKN(riwayat_penghargaan model.RiwayatPenghargaan, CreatedBy string) (status_bkn map[string]interface{}, err error) {
+	db, _ := model.CreateCon()
+
+	var pegawai model.Pegawai
+	db.Select("no_ref_bkn").First(&pegawai, "nip = ?", riwayat_penghargaan.Nip)
+
+	Tsk := (riwayat_penghargaan.Tsk).Format("02-01-2006")
+
+	updatas := map[string]interface{}{
+		"hargaId":    *riwayat_penghargaan.IdJenisPenghargaan,
+		"skNomor":    *riwayat_penghargaan.Nsk,
+		"pnsOrangId": *pegawai.NoRefBkn,
+		"tahun":      *riwayat_penghargaan.Thn,
+		"skDate":     Tsk,
+	}
+
+	if riwayat_penghargaan.IdSync != nil {
+		updatas["id"] = *riwayat_penghargaan.IdSync
+	}
+
+	status_bkn, err = PostSinkronisasiGetDataBKN(updatas, "penghargaan", CreatedBy)
+
+	if err != nil {
+		return
+	}
+
+	riwayat_update_bkn := &model.RiwayatUpdateBKN{
+		Deskripsi: fmt.Sprintf("Riwayat Penghargaan %s, No SK %s", riwayat_penghargaan.Nip, *riwayat_penghargaan.Nsk),
+		CreatedBy: CreatedBy,
+		Code:      fmt.Sprint(status_bkn["code"]),
+		Message:   fmt.Sprint(status_bkn["message"]),
+	}
+
+	db.Model(&model.RiwayatUpdateBKN{}).Create(&riwayat_update_bkn) // pass pointer of data to Create*/
+
+	if status_bkn["success"] == true || status_bkn["code"] == 1 {
+		mapData := status_bkn["mapData"]
+		//fmt.Println(mapData)
+		mapmapData := mapData.(map[string]interface{})
+		db.Model(&model.RiwayatPenghargaan{}).Debug().Where("nip = ? and nbintang = ? and nsk = ?", riwayat_penghargaan.Nip, riwayat_penghargaan.Nbintang, riwayat_penghargaan.Nsk).Update("idSync", mapmapData["rwPenghargaanId"])
+	}
+
+	return
 }

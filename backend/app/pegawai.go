@@ -51,7 +51,7 @@ func FindPegawai(c echo.Context) error {
 
 	appendJab := strings.Join(findJabatan, " ")
 
-	result = result.Joins(appendJab).Preload("JabatanAkhir", "master_riwayat_jabatan.akhir = ? ", 1).Preload("PangkatAkhir", "master_riwayat_pangkat.akhir = ? ", 1)
+	result = result.Joins(appendJab).Preload("JabatanAkhir", "master_riwayat_jabatan.akhir = ? ", 1).Preload("PangkatAkhir", "master_riwayat_pangkat.akhir = ? ", 1).Preload("PangkatAkhir.Pangkat")
 
 	//nama
 	if searchString.Nama != "" {

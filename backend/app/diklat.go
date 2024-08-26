@@ -39,7 +39,7 @@ func GetDiklat(searchString model.SearchDiklat) (diklat []model.Diklat, result *
 		result = result.Where("master_diklat.status IN (?)", searchString.Status)
 	}
 
-	result = result.Find(&diklat)
+	result = result.Order("cast(id as unsigned) asc").Find(&diklat)
 
 	return
 }

@@ -61,6 +61,21 @@ func GetSingkronisasiByHost(c echo.Context) error {
 	})
 }
 
+func GetSingkronisasiExpiredTimeByHost(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var singkronisasi model.Singkronisasi
+	host := c.Param("host")
+
+	result := db.Model(&model.Singkronisasi{}).Select("token_sso_expired", "token_apimanager_expired").Where("host =?", host).Scan(&singkronisasi)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       singkronisasi,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreateSingkronisasi(c echo.Context) error {
 	db, _ := model.CreateCon()
 

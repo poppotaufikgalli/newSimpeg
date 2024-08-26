@@ -112,6 +112,7 @@ type Pegawai struct {
 	EmailPemerintahan *string          `json:"email_pemerintahan,omitempty" validate:"omitempty,email"`
 	RiwayatJabatan    []RiwayatJabatan `gorm:"foreignKey:Nip" json:"riwayat_jabatan" validate:"-"`
 	JabatanAkhir      RiwayatJabatan   `gorm:"foreignKey:Nip" json:"jabatan_akhir" validate:"-"`
+	RiwayatPangkat    []RiwayatPangkat `gorm:"foreignKey:Nip" json:"riwayat_pangkat" validate:"-"`
 	PangkatAkhir      RiwayatPangkat   `gorm:"foreignKey:Nip" json:"pangkat_akhir" validate:"-"`
 	CreatedBy         string           `gorm:"<-:create" json:"created_by"`
 	CreatedAt         *time.Time       `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time

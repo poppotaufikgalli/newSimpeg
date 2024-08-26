@@ -8,12 +8,19 @@ func (JabatanFuBkn) TableName() string {
 	return "master_jabatan_fu_bkn"
 }
 
+type SearchInput struct {
+	SearchNama string `query:"searchNama"`
+	Limit      int    `query:"limit" default:"10"`
+}
+
 type SearchJabatanFuBkn struct {
-	Id        string `json:"id,omitempty"`
-	Nama      string `json:"nama,omitempty"`
-	CepatKode string `json:"cepat_kode,omitempty"`
-	Status    []int  `json:"status,omitempty"`
-	RefSimpeg string `json:"ref_simpeg,omitempty"`
+	Id         string `json:"id,omitempty"`
+	Nama       string `json:"nama,omitempty"`
+	CepatKode  string `json:"cepat_kode,omitempty"`
+	Status     []int  `json:"status,omitempty"`
+	RefSimpeg  string `json:"ref_simpeg,omitempty"`
+	SearchNama string `json:"searchNama,omitempty"`
+	Limit      int    `json:"limit,omitempty"`
 }
 
 type DeleteJabatanFuBkn struct {

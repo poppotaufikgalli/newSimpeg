@@ -15,7 +15,7 @@ import (
 func GetJabatanFtBkn(searchString model.SearchJabatanFtBkn) (jabatan_ft_bkn []model.JabatanFtBkn, result *gorm.DB) {
 	db, _ := model.CreateCon()
 
-	result = db.Model(&model.JabatanFtBkn{})
+	result = db.Model(&model.JabatanFtBkn{}).Preload("SubJabatan")
 
 	//id
 	if searchString.Id != "" {
@@ -71,6 +71,37 @@ func FindJabatanFtBkn(c echo.Context) error {
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 		"filter":     searchString,
+	})
+}
+
+func SearchJabatanFtBkn(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var jabatan_ft_bkn []model.JabatanFtBkn
+
+	req := model.SearchInput{
+		Limit: 10,
+	}
+
+	if err := c.Bind(&req); err != nil {
+		fmt.Println(err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	result := db.Model(&model.JabatanFtBkn{})
+
+	if req.SearchNama != "" {
+		nama := strings.TrimSpace(req.SearchNama)
+		str := []string{nama, "%"}
+		result = result.Where("master_jabatan_ft_bkn.nama LIKE ?", strings.Join(str, ""))
+	}
+
+	result = result.Order("nama asc").Limit(req.Limit).Find(&jabatan_ft_bkn)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       jabatan_ft_bkn,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
 	})
 }
 

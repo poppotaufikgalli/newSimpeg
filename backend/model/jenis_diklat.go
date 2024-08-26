@@ -9,9 +9,10 @@ func (JenisDiklat) TableName() string {
 }
 
 type SearchJenisDiklat struct {
-	Id     string `json:"id,omitempty"`
+	Id     int    `json:"id,omitempty"`
 	Nama   string `json:"nama,omitempty"`
 	Status []int  `json:"status,omitempty"`
+	RefBkn string `json:"ref_bkn,omitempty"`
 }
 
 type DeleteJenisDiklat struct {
@@ -19,8 +20,9 @@ type DeleteJenisDiklat struct {
 }
 
 type JenisDiklat struct {
-	Id        string     `gorm:"primaryKey;autoIncrement:false" json:"id" validate:"required"`
+	Id        int        `gorm:"primaryKey;autoIncrement:false" json:"id" validate:"required"`
 	Nama      string     `json:"nama"`
+	RefBkn    *string    `json:"ref_bkn"`
 	Status    *int       `json:"status"`
 	CreatedBy string     `gorm:"<-:create" json:"created_by"`
 	CreatedAt *time.Time `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time

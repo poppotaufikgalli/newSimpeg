@@ -31,6 +31,7 @@ const dataPangkat = ref({
 	akredit: 0,
 	akhir:0,
 	filename:'',
+	filename_pertek: '',
 })
 
 const pejabats = ref([])
@@ -233,8 +234,21 @@ function onlyNumber ($event) {
     	$event.preventDefault();
    	}
 }
+const selUploadDoc = ref(null)
 
-const doUploadDoc = async() => {
+const doUploadDoc = async(caption, doc) => {
+	let nip = $decodeBase64(snip)
+	selUploadDoc.value = doc
+	var fileDisplay = await $fetch(`/api/fileserver/static/dokumen/${nip}/${nip}_${doc}.pdf`)
+	if(fileDisplay != null){
+		const blobUrl = URL.createObjectURL(fileDisplay)
+		modalUploadDoc.showModal(`Upload Dokumen ${caption}`, "application/pdf", blobUrl)	
+	}else{
+		modalUploadDoc.showModal(`Upload Dokumen ${caption}`, "application/pdf", null)	
+	}
+}
+
+/*const doUploadDoc = async() => {
 	let nip = $decodeBase64(snip)
 	var fileDisplay = await $fetch(`/api/fileserver/static/dokumen/${nip}/${dataPangkat.value.filename}`)
 	if(fileDisplay != null){
@@ -243,7 +257,7 @@ const doUploadDoc = async() => {
 	}else{
 		modalUploadDoc.showModal(`Upload Dokumen Pangkat`, "application/pdf", null)	
 	}
-}
+}*/
 
 const callback = async(e) => {
 	const {name} = e
@@ -258,7 +272,8 @@ const callback = async(e) => {
 		formData.append("knpang", dataPangkat.value.knpang);
 
 		formData.append("file", fileBlob.value[0]);
-		formData.append("filename", nip+"_pangkat"+dataPangkat.value.kgolru+"_"+dataPangkat.value.knpang);
+		formData.append("filename", nip+"_"+selUploadDoc.value+dataPangkat.value.kgolru+"_"+dataPangkat.value.knpang);
+		formData.append("updateField", selUploadDoc.value == 'pertek' ? "filename_pertek" : "filename");
 		formData.append("path", 'dokumen/'+nip);
 
 		var {data, error} = await useFetch(`/api/uploads/upload/pangkat/${nip}`, {
@@ -436,15 +451,29 @@ const callback = async(e) => {
 					</div>
 					<!-- End Col -->
 
-					<div class="sm:col-span-3 flex justify-end" v-if="method == 'Update'">
+					<!--<div class="sm:col-span-3 flex justify-end" v-if="method == 'Update'">
 						<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none" v-on:click="doUploadDoc()">
 			  				Upload File
 						</button>
-					</div>
+					</div>-->
 					<!-- End Col -->
 	  			</div>
 			</form>
   		</div>
   		<!-- End Card -->
+
+  		<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2 mt-6" v-if="method == 'Update'">
+			<div class="mb-8">
+				<h2 class="text-xl font-bold text-blue-600">Dokumen Pangkat</h2>
+			</div>
+			<div class="grid sm:grid-cols-4 gap-2 gap-2.5">
+				<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="doUploadDoc('SK Pangkat','pangkat')">
+	  				SK Pangkat
+				</button>
+				<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="doUploadDoc('Dok Pertek','Pertek')">
+	  				Dok Pertek Pangkat
+				</button>
+			</div>
+		</div>
 	</div>
 </template>

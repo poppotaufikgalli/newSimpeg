@@ -1,15 +1,20 @@
 <script setup>
 import { useModalUploadDoc } from '~/store/modalUploadDoc';
+import { useAuthStore } from '~/store/auth'; // import the auth store we just created
 
 const modalUploadDoc = useModalUploadDoc();
 const { fileBlob } = storeToRefs(modalUploadDoc)
-
+const { userInfo } = useAuthStore();
 const { $decodeBase64, $encodeBase64 } = useNuxtApp()
 const route = useRoute()
 const dayjs = useDayjs()
+import customParseFormat from "dayjs/plugin/customParseFormat";
+dayjs.extend(customParseFormat)
+
 const showSpinner = ref(false)
 const toast = useToast()
 const {snip, stmulai} = route.params
+const {sbkn} = route.query
 
 const dataRefAngkaKredit = ref({
 	nip: '',
@@ -29,7 +34,11 @@ const dataAngkaKredit = ref({
 	tambahan: 0,
 	total: 0,
 	filename: '',
+	filename_dok_pak: '',
+	filename_sk_pak: '',
 	idSync:'',
+	rw_jabatan_id:'',
+	rw_jabatan_id_bkn:'',
 })
 
 const jabfungs = ref([])
@@ -45,7 +54,6 @@ const unitKerja = ref([])
 
 const seljnsjab = ref()
 const selopd = ref()
-const selkjab = ref()
 
 const kpej = ref(null)
 const kgolru = ref(null)
@@ -82,8 +90,7 @@ const { pending: pendingRef, data: dataRef, refresh: refreshDataRef } = await us
   	])
 
   	jabfungs.value = jabfung
-  	//jenisJenjangs.value = jenisJenjang
-  	
+
   	if(refJabfung){
 		refJabfung.value.reinit()
 	}
@@ -96,20 +103,52 @@ const { pending: pendingRef, data: dataRef, refresh: refreshDataRef } = await us
 const { pending, data, refresh} = await useAsyncData('getdataAngkaKreditAkhir', async() => {
 	if(snip){
 		let nip = $decodeBase64(snip)
-		let tmulai = $decodeBase64(stmulai)
-		var result = await $fetch(`/api/gets/riwayat_angka_kredit/${nip}/${tmulai}`);
-		console.log(result)
 
-		if(result.nip == nip){
-			method.value = "Update"
+		if(sbkn != ""){
+			let sid = $decodeBase64(sbkn)
+			var result = await $fetch(`/api/gets/singkronisasi_bkn/getDataBKNById/angkakredit/${sid}`)
+			var item = result.data
+			let tsk = dayjs(dayjs(item.tanggalSk, "DD-MM-YYYY")).format("YYYY-MM-DD[T]HH:mm:ss[Z]")
+			let tmulai = dayjs(item.tahunMulaiPenailan+"-"+item.bulanMulaiPenailan+"-1").format("YYYY-MM-DD[T]HH:mm:ss[Z]")
+			let tselesai = dayjs(item.tahunSelesaiPenailan+"-"+item.bulanSelesaiPenailan+"-1").format("YYYY-MM-DD[T]HH:mm:ss[Z]")
+			let jns = ""
+			if(item.isAngkaKreditPertama == "1") {jns = "Pertama"}
+			else if(item.isIntegrasi == "1") {jns ="Integrasi"}
+			else if(item.isKonversi == "1") {jns ="Konversi"}
+			else {jns = "Lanjutan"}
 
-			dataAngkaKredit.value = _pickBy(result, function(val, key) {
-				return _includes(_keys(dataAngkaKredit.value), key);
-			})
+			dataAngkaKredit.value = {
+				nip: nip,
+				jns: jns,
+				nsk: result.data.nomorSk,
+				tsk: tsk,
+				kjab: '',
+				tmulai: tmulai,
+				tselesai: tselesai,
+				utama: result.data.kreditUtamaBaru,
+				tambahan: result.data.kreditPenunjangBaru,
+				total: result.data.kreditBaruTotal,
+				idSync: sid,
+				rw_jabatan_id:'',
+				rw_jabatan_id_bkn:result.data.rwJabatan,
+			}
+			
+		}else{
+			let tmulai = $decodeBase64(stmulai)
+			tmulai = dayjs(tmulai, 'YYYY-MM-DD').format("YYYY-MM-DD")
+			var result = await $fetch(`/api/gets/riwayat_angka_kredit/${nip}/${tmulai}`);
 
-			dataRefAngkaKredit.value = _pickBy(result, function(val, key) {
-				return _includes(_keys(dataRefAngkaKredit.value), key);
-			})
+			if(result.nip == nip){
+				method.value = "Update"
+
+				dataAngkaKredit.value = _pickBy(result, function(val, key) {
+					return _includes(_keys(dataAngkaKredit.value), key);
+				})
+
+				dataRefAngkaKredit.value = _pickBy(result, function(val, key) {
+					return _includes(_keys(dataRefAngkaKredit.value), key);
+				})
+			}
 		}
 	}
 })
@@ -141,70 +180,70 @@ const tselesai = computed({
 	}
 })
 
+const utama = computed({
+	get(){
+		return dataAngkaKredit.value.utama;
+	},
+	set(val){
+		dataAngkaKredit.value.utama = val
+		dataAngkaKredit.value.total = (val*1) + (dataAngkaKredit.value.tambahan *1)
+	}
+})
+
+const tambahan = computed({
+	get(){
+		return dataAngkaKredit.value.tambahan;
+	},
+	set(val){
+		dataAngkaKredit.value.tambahan = val
+		dataAngkaKredit.value.total = (dataAngkaKredit.value.utama *1) + (val*1)
+	}
+})
+
 const total = computed({
 	get(){
-		dataAngkaKredit.value.total = (dataAngkaKredit.value.utama *1) + (dataAngkaKredit.value.tambahan *1)
+		//dataAngkaKredit.value.total = (dataAngkaKredit.value.utama *1) + (dataAngkaKredit.value.tambahan *1)
 		return dataAngkaKredit.value.total;
+	},
+	set(val){
+		dataAngkaKredit.value.total = val
+	}
+})
+
+const selkjab = computed({
+	get(){
+		return dataAngkaKredit.value.kjab
+	},
+	set(val){
+		dataAngkaKredit.value.kjab = val
+
+		var selJab = _find(jabfungs.value, function(o){
+			return o.kjab == val
+		})
+
+		dataAngkaKredit.value.rw_jabatan_id = selJab.id
+		dataAngkaKredit.value.rw_jabatan_id_bkn = selJab.idSync
 	}
 })
 
 onMounted(() => {
-	//refreshNuxtData(["getDataRef", "getdataAngkaKreditAkhir"])
 	refreshNuxtData(["getDataRef", "getdataAngkaKreditAkhir"])
 	modalUploadDoc.$onAction(callback, false)
 })
 
-function resetJab() {
-	//refreshNuxtData(["getDataRef", "getdataAngkaKreditAkhir", "getListdataAngkaKredit"])
-}
-
-async function simpanData(lvl) {
+async function simpanData() {
 	showSpinner.value = true
 
 	var compacted = _pickBy(dataAngkaKredit.value);
+	
 	compacted.tsk = compacted.tsk ? dayjs(dayjs(compacted.tsk, "YYYY-MM-DD")).format("YYYY-MM-DD[T]HH:mm:ss[Z]") : null
 	compacted.tmulai = compacted.tmulai ? dayjs(dayjs(compacted.tmulai, "YYYY-MM")).format("YYYY-MM-DD[T]HH:mm:ss[Z]") : null
 	compacted.tselesai = compacted.tselesai ? dayjs(dayjs(compacted.tselesai, "YYYY-MM")).format("YYYY-MM-DD[T]HH:mm:ss[Z]") : null
-
 	compacted.utama = compacted.utama ? compacted.utama *1 : 0
 	compacted.tambahan = compacted.tambahan ? compacted.utama *1 : 0
 	compacted.total = compacted.total ? compacted.total *1 : 0
 
-	if(lvl == 2){
-		let body = compacted
-
-	    let nip = $decodeBase64(snip)
-	    var {data, error} = await useFetch('/api/puts/singkronisasi_bkn/putsDataBKNAK/'+nip, {
-	        method: 'POST',
-	        body: body,
-	    })
-
-	    console.log(data.value)
-	    console.log(error.value)
-
-	    if(data.value.success){
-	    	compacted.idSync = data.value?.mapData?.rwAngkaKreditId;
-	    }
-
-	    if(error.value){
-	        toast.add({
-	            id: 'error_put_singkronisasi_ak',
-	            description: error.value.data.data,
-	            timeout: 6000,
-	            color: 'red',
-	        })  
-	    }else{
-	        toast.add({
-	            id: 'success_post_singkronisasi_ak',
-	            description: data.value.success == true ? "Data BKN Update Success |" : "Data BKN Update Failed |"  +data.value.message,
-		    	timeout: 6000,
-		    	color:  data.value.success == "1" ? 'green' : 'red',
-	        })  
-	    }
-	}
-
 	var dr = dataRefAngkaKredit.value
-	//dr.kgolru = dr.kgolru *1
 
 	if(method.value == 'Update'){
 		var body = {
@@ -218,22 +257,31 @@ async function simpanData(lvl) {
 		})
 
 		if(error.value){
+			const {title, description} = error.value.data.data
 			toast.add({
-		    	id: 'error_put_ak',
-		    	description: error.value.data.data,
-		    	timeout: 6000
-		  	}) 	
+				id: 'error_put_angka_kredit',
+				icon: "i-heroicons-x-circle",
+				title: title,
+				description: description,
+				timeout: 6000,
+				color: 'red',
+			}) 	
 		}else{
 			toast.add({
-		    	id: 'success_put_ak',
-		    	description: "Data berhasil di Update",
-		    	timeout: 6000
-		  	}) 	
+				id: 'success_put_angka_kredit',
+				icon: "i-heroicons-check-circle",
+				title: "Update Data Berhasil",
+				description: "Data telah di Update",
+				timeout: 6000
+			}) 	
+
+			sendDataBKN(JSON.stringify(compacted))
+			navigateTo({ path: '/pegawai/'+snip+'/RiwayatPegawai/angka-kredit/'})
 		}
 	}else{
 		compacted.nip = $decodeBase64(snip)
-		//compacted.akhir = 1
 		var body = JSON.stringify(compacted)
+
 
 		var {data, error} = await useFetch('/api/posts/riwayat_angka_kredit/new', {
 			method: 'POST',
@@ -242,31 +290,75 @@ async function simpanData(lvl) {
 
 		if(error.value){
 			toast.add({
-		    	id: 'error_post_jabatan',
-		    	description: error.value.data.data,
-		    	timeout: 6000
+		    	id: 'error_post_angka_kredit',
+		    	icon: "i-heroicons-x-circle",
+		    	title: error.value.data.data.title ?? "Gagal Menambahkan Data Angka Kredit",
+		    	description: error.value.data.data.error,
+		    	timeout: 6000,
+		    	color: 'red',
 		  	}) 	
 		}else{
 			toast.add({
-		    	id: 'success_post_jabatan',
+		    	id: 'success_post_angka_kredit',
+		    	icon: "i-heroicons-check-circle",
+		    	title: "Menambahkan Data Angka Kredit",
 		    	description: "Data berhasil di Ditambahkan",
 		    	timeout: 6000
-		  	}) 	
+		  	})
+
+		  	sendDataBKN(body)
+		  	navigateTo({ path: '/pegawai/'+snip+'/RiwayatPegawai/angka-kredit/'})
 		}
 	}
 
   	showSpinner.value = false
-  	refreshNuxtData(["getDataRef"])
 }
 
-const doUploadDoc = async() => {
+async function sendDataBKN(body){
+	if(userInfo.gid == 1){
+		var {data, error} = await useFetch('/api/posts/riwayat_angka_kredit/bkn', {
+			method: 'POST',
+			body: body,
+		})
+
+		if(error.value){
+			toast.add({
+		    	id: 'error_post_angka_kredit_bkn',
+		    	icon: "i-heroicons-x-circle",
+		    	title: "Data Angka Kredit BKN",
+		    	description: error.value.data.data.error,
+		    	timeout: 6000,
+		    	color: 'red',
+		  	}) 	
+		}else{
+			toast.add({
+		    	id: 'success_post_angka_kredit_bkn',
+		    	icon: "i-heroicons-check-circle",
+		    	title: "Angka Kredit BKN",
+		    	description: "Data berhasil di Dikirim",
+		    	timeout: 6000
+		  	})
+		}	
+	}
+}
+
+const selUploadDoc = ref("")
+const selUploadDocJudul= ref("")
+const selUploadDocBkn = ref("")
+
+const doUploadDoc = async(judul, fileIdx, idxBkn="") => {
 	let nip = $decodeBase64(snip)
-	var fileDisplay = await $fetch(`/api/fileserver/static/dokumen/${nip}/${dataAngkaKredit.value.filename}`)
+	let idx = "filename_"+fileIdx;
+
+	var fileDisplay = await $fetch(`/api/fileserver/static/dokumen/${nip}/${dataAngkaKredit.value[idx]}`)
+	selUploadDoc.value = fileIdx
+	selUploadDocBkn.value = idxBkn
+	selUploadDocJudul.value = judul
 	if(fileDisplay != null){
 		const blobUrl = URL.createObjectURL(fileDisplay)
-		modalUploadDoc.showModal(`Upload Dokumen Angka Kredit`, "application/pdf", blobUrl)	
+		modalUploadDoc.showModal(`Upload Dokumen Angka Kredit ${judul}`, "application/pdf", blobUrl, 'upload')	
 	}else{
-		modalUploadDoc.showModal(`Upload Dokumen Angka Kredit`, "application/pdf", null)	
+		modalUploadDoc.showModal(`Upload Dokumen Angka Kredit ${judul}`, "application/pdf", null, 'upload')	
 	}
 }
 
@@ -281,62 +373,37 @@ const callback = async(e) => {
 		let xmulai = $decodeBase64(stmulai)
 		formData.append("tmulai", xmulai);
 		formData.append("file", fileBlob.value[0]);
-		formData.append("filename", nip+"_angka_kredit"+tmulai.value);
+		formData.append("field_name", "filename_"+selUploadDoc.value)
+		formData.append("filename", nip+"_"+selUploadDoc.value+tmulai.value);
 		formData.append("path", 'dokumen/'+nip);
+
+		formData.append("id_ref_dokumen", selUploadDocBkn.value)
+		formData.append("idSync", dataAngkaKredit.value.idSync)
 
 		var {data, error} = await useFetch(`/api/uploads/upload/ak/${nip}`, {
 			method: 'POST',
 			body: formData,
 		});
 
-		if(error.value){
+		if(data.value.status != "200"){
+			const {title, description} = data.value.data
 			toast.add({
-		    	id: 'error_post_upload_ak',
-		    	description: error.value.data.data,
-		    	timeout: 6000
-		  	}) 	
+				id: 'error_post_upload_angka_kredit',
+				icon: "i-heroicons-x-circle",
+				title: title,
+				description: description,
+				timeout: 6000,
+				color: 'red'
+			}) 	
 		}else{
 			toast.add({
-		    	id: 'success_post_upload_ak',
-		    	description: `Dokumen Angka Kredit berhasil di Upload`,
-		    	timeout: 6000
-		  	}) 	
+				id: 'success_post_upload_angka_kredit',
+				icon: "i-heroicons-check-circle",
+				title: `Berhasil Upload Dokumen ${selUploadDocJudul.value}`,
+				description: `Dokumen berhasil di Upload`,
+				timeout: 6000
+			}) 	
 		}
-
-		//upload to BKN
-
-		if(dataAngkaKredit.value.idSync != ""){
-			let formDataBkn = new FormData();
-			formDataBkn.append("file", fileBlob.value[0]);
-			formDataBkn.append("idSync", dataAngkaKredit.value.idSync);
-			formDataBkn.append("id_ref_dokumen", 879);
-
-			var {data, error} = await useFetch(`/api/uploads/upload/dokRwBkn/${nip}`, {
-				method: 'POST',
-				body: formDataBkn,
-			});	
-
-			console.log(error.value)
-			console.log(data.value)
-
-			if(error.value){
-		        toast.add({
-		            id: 'error_post_upload_ak_bkn',
-		            description: error.value.data.data,
-		            timeout: 6000,
-		            color: 'red',
-		        })  
-		    }else{
-		        toast.add({
-		            id: 'success_post_upload_ak_bkn',
-		            description: data.value.data.code == 1 ? "Dokumen Angka Kredit BKN Upload Success |" +data.value.data.message : "Dokumen Angka Kredit BKN Upload Failed |"  +data.value.data.message,
-			    	timeout: 6000,
-			    	color:  data.value.data.code == 1 ? 'green' : 'red',
-		        })  
-		    }
-		}
-
-		//end upload to BKN
 
 		showSpinner.value = false
 		refreshNuxtData(["getDataRef", "getdataAngkaKreditAkhir"])
@@ -356,6 +423,7 @@ const doRefresh = () => {
 }
 </script>
 <template>
+	<AppLoadingSpinner :show="showSpinner" />
 	<LayoutRiwayatPegawai>
 		<div class="mx-auto">
 			<!-- Card -->
@@ -385,7 +453,7 @@ const doRefresh = () => {
 						<!-- End Col -->
 
 						<div class="sm:col-span-9">
-							<SearchSelect2 ref="refJabfung" id="jabfungs" :options="jabfungs" keyList="kjab" namaList="njab" v-model="dataAngkaKredit.kjab"/>
+							<SearchSelect2 ref="refJabfung" id="jabfungs" :options="jabfungs" keyList="kjab" namaList="njab" v-model="selkjab"/>
 						</div>
 						<!-- End Col -->
 
@@ -419,8 +487,6 @@ const doRefresh = () => {
 						</template>
 						<!-- End Col -->
 
-						<div class="sm:col-span-12 my-2 first:pt-0 last:pb-0 border-t first:border-transparent border-gray-200"></div>
-
 						<div class="sm:col-span-3 sm:col-start-1">
 							<label class="inline-block text-sm text-gray-800 mt-2.5">Priode Penilaian</label>
 						</div>
@@ -443,7 +509,7 @@ const doRefresh = () => {
 
 							<div class="sm:col-span-3">
 								<div class="sm:flex gap-2">
-									<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataAngkaKredit.utama" @keypress="onlyNumber">
+									<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="utama" @keypress="onlyNumber">
 								</div>
 							</div>
 							<!-- End Col -->
@@ -455,7 +521,7 @@ const doRefresh = () => {
 
 							<div class="sm:col-span-3">
 								<div class="sm:flex gap-2">
-									<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataAngkaKredit.tambahan" @keypress="onlyNumber">
+									<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tambahan" @keypress="onlyNumber">
 								</div>
 							</div>
 							<!-- End Col -->
@@ -479,29 +545,29 @@ const doRefresh = () => {
 								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" @click="doRefresh">
 					  				Batal
 								</button>
-								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(0)">
-					  				{{method}} Data [0]
-								</button>	
-								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(1)">
-					  				{{method}} Data [1]
-								</button>	
-								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(2)">
-					  				{{method}} Data [2]
+								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData()">
+					  				{{method}} Data
 								</button>	
 							</div>
-						</div>
-						<!-- End Col -->
-
-						<div class="sm:col-span-2 flex justify-end" v-if="method == 'Update'">
-							<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none" v-on:click="doUploadDoc()">
-				  				Upload File
-							</button>
 						</div>
 						<!-- End Col -->
 		  			</div>
 				</form>
 	  		</div>
 	  		<!-- End Card -->
+		</div>
+		<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2 mt-6" v-if="method == 'Update'">
+			<div class="mb-8">
+				<h2 class="text-xl font-bold text-blue-600">Dokumen Angka Kredit</h2>
+			</div>
+			<div class="grid sm:grid-cols-4 gap-2 gap-2.5">
+				<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="doUploadDoc('SK PAK','sk_pak', '879')">
+					SK PAK
+				</button>
+				<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="doUploadDoc('Dokumen PAK','dok_pak', '880')">
+					Dok PAK
+				</button>
+			</div>
 		</div>
 		<!-- End Card Section -->
 	</LayoutRiwayatPegawai>

@@ -43,6 +43,7 @@ func main() {
 			if strings.HasSuffix(c.Path(), "/login") {
 				return true
 			}
+
 			if strings.HasSuffix(c.Path(), "/fakelogin") {
 				return true
 			}
@@ -68,7 +69,8 @@ func main() {
 	e.POST("/upload/stlud/:nip", app.UploadSTLUD)
 	e.POST("/upload/pmk/:nip", app.UploadPMK)
 	e.POST("/upload/pindah_instansi/:nip", app.UploadPI)
-	e.POST("/upload/p2kp/:nip", app.UploadP2kp)
+	e.POST("/upload/skp/:nip", app.UploadSKP)
+	e.POST("/upload/kinerja/:nip", app.UploadKinerja)
 	e.POST("/upload/penghargaan/:nip", app.UploadPenghargaan)
 	e.POST("/upload/hukdis/:nip", app.UploadHukdis)
 	e.POST("/upload/cuti/:nip", app.UploadCuti)
@@ -76,10 +78,13 @@ func main() {
 	e.POST("/upload/tugas_ln/:nip", app.UploadTugasLn)
 	e.POST("/upload/bahasa/:nip", app.UploadBahasa)
 	e.POST("/upload/pendum/:nip", app.UploadPendum)
+	e.POST("/upload/tubel/:nip", app.UploadTubel)
 	e.POST("/upload/diklat/:nip", app.UploadDiklat)
 	e.POST("/upload/keluarga/:nip", app.UploadKeluarga)
 
 	e.POST("/upload/dokRwBkn/:nip", app.UploadDokRwBKN)
+
+	e.POST("/download/dokRwBkn", app.DownloadDokRwBKN)
 
 	//pegawai
 	routePegawai := e.Group("/pegawai")
@@ -98,6 +103,7 @@ func main() {
 	routeOPD.POST("", app.FindOPD)
 	routeOPD.GET("/:id", app.GetOPDbyId)
 	routeOPD.POST("/new", app.CreateOPD)
+	routeOPD.GET("/filter", app.SearchOPDFilter)
 	routeOPD.PUT("", app.UpdateOPD)
 	routeOPD.DELETE("", app.DeleteOPD)
 
@@ -129,14 +135,25 @@ func main() {
 	routeJenisPegawai.PUT("", app.UpdateJenisPegawai)
 	routeJenisPegawai.DELETE("", app.DeleteJenisPegawai)
 
+	//Jenis Tugas Mutasi
+	routeJenisTugasMutasi := e.Group("/jenis_tugas_mutasi")
+	routeJenisTugasMutasi.GET("", app.FindJenisTugasMutasi)
+	routeJenisTugasMutasi.GET("/:id", app.SearchJenisTugasMutasiById)
+	routeJenisTugasMutasi.POST("/new", app.CreateJenisTugasMutasi)
+	routeJenisTugasMutasi.PUT("", app.UpdateJenisTugasMutasi)
+	routeJenisTugasMutasi.DELETE("", app.DeleteJenisTugasMutasi)
+
 	//riwayat jabatan
 	routeRiwayatJabatan := e.Group("/riwayat_jabatan")
-	routeRiwayatJabatan.GET("", app.FindRiwayatJabatan)
+	//routeRiwayatJabatan.GET("", app.FindRiwayatJabatan)
 	routeRiwayatJabatan.GET("/:nip", app.GetRiwayatJabatanByNip)
 	routeRiwayatJabatan.GET("/:nip/akhir", app.GetRiwayatJabatanByNipAkhir)
-	routeRiwayatJabatan.GET("/:nip/:tmtjab", app.GetRiwayatJabatanByNipTmtjab)
+	//routeRiwayatJabatan.GET("/:nip/:tmtjab", app.GetRiwayatJabatanByNipTmtjab)
+	routeRiwayatJabatan.GET("/:nip/:id", app.GetRiwayatJabatanByNipId)
+	//routeRiwayatJabatan.GET("/:nip/:tmtjab/:tmt_mutasi", app.GetRiwayatJabatanByNipTmtjabTmtMutasi)
 	routeRiwayatJabatan.POST("", app.FindRiwayatJabatan)
 	routeRiwayatJabatan.POST("/new", app.CreateRiwayatJabatan)
+	routeRiwayatJabatan.POST("/bkn", app.UpdateRiwayatJabatanBkn)
 	routeRiwayatJabatan.PUT("", app.UpdateRiwayatJabatan)
 	routeRiwayatJabatan.DELETE("", app.DeleteRiwayatJabatan)
 
@@ -162,12 +179,12 @@ func main() {
 	routeAgama.DELETE("", app.DeleteAgama)
 
 	//CPNS
-	/*routeCpns := e.Group("/cpns")
+	routeCpns := e.Group("/cpns")
 	routeCpns.GET("", app.FindCpns)
 	routeCpns.GET("/:nip", app.GetCpnsByNip)
 	routeCpns.POST("/new", app.CreateCpns)
 	routeCpns.PUT("", app.UpdateCpns)
-	routeCpns.DELETE("", app.DeleteCpns)*/
+	routeCpns.DELETE("", app.DeleteCpns)
 
 	//Diklat
 	routeDiklat := e.Group("/diklat")
@@ -218,9 +235,19 @@ func main() {
 	//Jabatan FT BKN
 	routeJabatanFtBkn := e.Group("/jabatan_ft_bkn")
 	routeJabatanFtBkn.GET("", app.FindJabatanFtBkn)
+	routeJabatanFtBkn.GET("/filter", app.SearchJabatanFtBkn)
 	routeJabatanFtBkn.POST("/new", app.CreateJabatanFtBkn)
 	routeJabatanFtBkn.PUT("", app.UpdateJabatanFtBkn)
 	routeJabatanFtBkn.DELETE("", app.DeleteJabatanFtBkn)
+
+	//Jabatan SUB BKN
+	routeJabatanSubBkn := e.Group("/jabatan_sub_bkn")
+	routeJabatanSubBkn.GET("", app.FindJabatanSubBkn)
+	routeJabatanSubBkn.POST("", app.FindJabatanSubBkn)
+	routeJabatanSubBkn.GET("/filter_jft/:id_jft", app.FindJabatanSubBknFilterJft)
+	routeJabatanSubBkn.POST("/new", app.CreateJabatanSubBkn)
+	routeJabatanSubBkn.PUT("", app.UpdateJabatanSubBkn)
+	routeJabatanSubBkn.DELETE("", app.DeleteJabatanSubBkn)
 
 	//Jabatan FU
 	routeJabatanFu := e.Group("/jabatan_fu")
@@ -233,6 +260,8 @@ func main() {
 	//Jabatan FU BKN
 	routeJabatanFuBkn := e.Group("/jabatan_fu_bkn")
 	routeJabatanFuBkn.GET("", app.FindJabatanFuBkn)
+	routeJabatanFuBkn.POST("", app.FindJabatanFuBkn)
+	routeJabatanFuBkn.GET("/filter", app.SearchJabatanFuBkn)
 	routeJabatanFuBkn.POST("/new", app.CreateJabatanFuBkn)
 	routeJabatanFuBkn.PUT("", app.UpdateJabatanFuBkn)
 	routeJabatanFuBkn.DELETE("", app.DeleteJabatanFuBkn)
@@ -263,6 +292,7 @@ func main() {
 	//Jenis Diklat
 	routeJenisDiklat := e.Group("/jenis_diklat")
 	routeJenisDiklat.GET("", app.FindJenisDiklat)
+	routeJenisDiklat.POST("", app.FindJenisDiklat)
 	routeJenisDiklat.GET("/:id", app.GetJenisDiklatByJdiklat)
 	routeJenisDiklat.POST("/new", app.CreateJenisDiklat)
 	routeJenisDiklat.PUT("", app.UpdateJenisDiklat)
@@ -426,10 +456,21 @@ func main() {
 	//pendidikan
 	routePendidikan := e.Group("/pendidikan")
 	routePendidikan.GET("", app.FindPendidikan)
+	routePendidikan.GET("/filter", app.SearchPendidikanFilter)
+	routePendidikan.GET("/filter/:ktpu", app.SearchPendidikanFilterKtpu)
 	routePendidikan.POST("", app.FindPendidikan)
 	routePendidikan.POST("/new", app.CreatePendidikan)
 	routePendidikan.PUT("", app.UpdatePendidikan)
 	routePendidikan.DELETE("", app.DeletePendidikan)
+
+	//pendidikan_bkn
+	routePendidikanBkn := e.Group("/pendidikan_bkn")
+	routePendidikanBkn.GET("", app.FindPendidikanBkn)
+	routePendidikanBkn.GET("/filter", app.SearchPendidikanBknFilter)
+	routePendidikanBkn.POST("", app.FindPendidikanBkn)
+	routePendidikanBkn.POST("/new", app.CreatePendidikanBkn)
+	routePendidikanBkn.PUT("", app.UpdatePendidikanBkn)
+	routePendidikanBkn.DELETE("", app.DeletePendidikanBkn)
 
 	//profesi
 	routeProfesi := e.Group("/profesi")
@@ -458,6 +499,7 @@ func main() {
 	routeRiwayatAngkaKredit.POST("", app.FindRiwayatAngkaKredit)
 	routeRiwayatAngkaKredit.GET("/:nip/:tmulai", app.GetRiwayatAngkaKreditByNipTmulai)
 	routeRiwayatAngkaKredit.POST("/new", app.CreateRiwayatAngkaKredit)
+	routeRiwayatAngkaKredit.POST("/bkn", app.UpdateRiwayatAngkaKreditBkn)
 	routeRiwayatAngkaKredit.PUT("", app.UpdateRiwayatAngkaKredit)
 	routeRiwayatAngkaKredit.DELETE("", app.DeleteRiwayatAngkaKredit)
 
@@ -526,14 +568,25 @@ func main() {
 	routeRiwayatOrganisasi.PUT("", app.UpdateRiwayatOrganisasi)
 	routeRiwayatOrganisasi.DELETE("", app.DeleteRiwayatOrganisasi)
 
-	//riwayat p2kp
-	routeRiwayatP2kp := e.Group("/riwayat_p2kp")
-	routeRiwayatP2kp.GET("", app.FindRiwayatP2kp)
-	routeRiwayatP2kp.GET("/:nip/:thnilai/:tmulai", app.GetRiwayatP2kpByNipThnTmulai)
-	routeRiwayatP2kp.POST("", app.FindRiwayatP2kp)
-	routeRiwayatP2kp.POST("/new", app.CreateRiwayatP2kp)
-	routeRiwayatP2kp.PUT("", app.UpdateRiwayatP2kp)
-	routeRiwayatP2kp.DELETE("", app.DeleteRiwayatP2kp)
+	//riwayat SKP
+	routeRiwayatSKP := e.Group("/riwayat_skp")
+	routeRiwayatSKP.GET("", app.FindRiwayatSkp)
+	routeRiwayatSKP.GET("/:nip/:id/:tahun", app.GetRiwayatSkpByNipIdTahun)
+	routeRiwayatSKP.POST("", app.FindRiwayatSkp)
+	routeRiwayatSKP.POST("/new", app.CreateRiwayatSkp)
+	routeRiwayatSKP.POST("/bkn", app.UpdateRiwayatSkpBkn)
+	routeRiwayatSKP.PUT("", app.UpdateRiwayatSkp)
+	routeRiwayatSKP.DELETE("", app.DeleteRiwayatSkp)
+
+	//riwayat Kinerja
+	routeRiwayatKinerja := e.Group("/riwayat_kinerja")
+	routeRiwayatKinerja.GET("", app.FindRiwayatKinerja)
+	routeRiwayatKinerja.GET("/:nip/:id/:thnilai", app.GetRiwayatKinerjaByNipIdThn)
+	routeRiwayatKinerja.POST("", app.FindRiwayatKinerja)
+	routeRiwayatKinerja.POST("/new", app.CreateRiwayatKinerja)
+	routeRiwayatKinerja.POST("/bkn", app.UpdateRiwayatKinerjaBkn)
+	routeRiwayatKinerja.PUT("", app.UpdateRiwayatKinerja)
+	routeRiwayatKinerja.DELETE("", app.DeleteRiwayatKinerja)
 
 	//riwayat pendum
 	routeRiwayatPendum := e.Group("/riwayat_pendum")
@@ -543,6 +596,15 @@ func main() {
 	routeRiwayatPendum.POST("/new", app.CreateRiwayatPendum)
 	routeRiwayatPendum.PUT("", app.UpdateRiwayatPendum)
 	routeRiwayatPendum.DELETE("", app.DeleteRiwayatPendum)
+
+	//riwayat pendum
+	routeRiwayatTubel := e.Group("/riwayat_tubel")
+	routeRiwayatTubel.GET("", app.FindRiwayatTubel)
+	routeRiwayatTubel.POST("", app.FindRiwayatTubel)
+	routeRiwayatTubel.GET("/:nip/:id", app.GetRiwayatTubelByNipId)
+	routeRiwayatTubel.POST("/new", app.CreateRiwayatTubel)
+	routeRiwayatTubel.PUT("", app.UpdateRiwayatTubel)
+	routeRiwayatTubel.DELETE("", app.DeleteRiwayatTubel)
 
 	//riwayat penghargaan
 	routeRiwayatPenghargaan := e.Group("/riwayat_penghargaan")
@@ -577,14 +639,6 @@ func main() {
 	routeRiwayatSingkronisasi.POST("/new", app.CreateRiwayatSingkronisasi)
 	routeRiwayatSingkronisasi.PUT("", app.UpdateRiwayatSingkronisasi)
 	routeRiwayatSingkronisasi.DELETE("", app.DeleteRiwayatSingkronisasi)
-
-	//riwayat SKP
-	routeRiwayatSKP := e.Group("/riwayat_skp")
-	routeRiwayatSKP.GET("", app.FindRiwayatSkp)
-	routeRiwayatSKP.POST("", app.FindRiwayatSkp)
-	routeRiwayatSKP.POST("/new", app.CreateRiwayatSkp)
-	routeRiwayatSKP.PUT("", app.UpdateRiwayatSkp)
-	routeRiwayatSKP.DELETE("", app.DeleteRiwayatSkp)
 
 	//riwayat Stlud
 	routeRiwayatStlud := e.Group("/riwayat_stlud")
@@ -629,10 +683,18 @@ func main() {
 	routeRumpunJabfung.PUT("", app.UpdateRumpunJabfung)
 	routeRumpunJabfung.DELETE("", app.DeleteRumpunJabfung)
 
+	//rumpun jabatan
+	routeRumpunJabatan := e.Group("/rumpun_jabatan")
+	routeRumpunJabatan.GET("", app.FindRumpunJabatan)
+	routeRumpunJabatan.POST("/new", app.CreateRumpunJabatan)
+	routeRumpunJabatan.PUT("", app.UpdateRumpunJabatan)
+	routeRumpunJabatan.DELETE("", app.DeleteRumpunJabatan)
+
 	//Singkronisasi
 	routeSingkronisasi := e.Group("/singkronisasi")
 	routeSingkronisasi.GET("", app.FindSingkronisasi)
 	routeSingkronisasi.GET("/:host", app.GetSingkronisasiByHost)
+	routeSingkronisasi.GET("/:host/expiredTime", app.GetSingkronisasiExpiredTimeByHost)
 	routeSingkronisasi.POST("", app.FindSingkronisasi)
 	routeSingkronisasi.POST("/new", app.CreateSingkronisasi)
 	routeSingkronisasi.PUT("", app.UpdateSingkronisasi)
@@ -642,11 +704,17 @@ func main() {
 	routeSingkronisasiBKN.POST("/riwayat", app.GetSingkronisasiRiwayat)
 	routeSingkronisasiBKN.POST("/updateToken", app.UpdateTokenSingkronisasi)
 	routeSingkronisasiBKN.GET("/getDataBKN/:page/:nip", app.GetSingkronisasiGetDataBkn)
+	routeSingkronisasiBKN.GET("/getDataBKNById/:page/:idSync", app.GetSingkronisasiGetDataBknById)
+
+	//routeSingkronisasiBKN.DELETE("/delDataBKNById/:page/:idSync", app.DeleteSingkronisasiDataBknById)
+
 	routeSingkronisasiBKN.PUT("/putsDataBKN/:page", app.UpdateSingkronisasiPutDataUtamaBkn)
 	routeSingkronisasiBKN.POST("/getDocFromBkn", app.PostSinkronisasiGetDocFromBKN)
 	routeSingkronisasiBKN.PUT("/putsDataBKNAK/:nip", app.UpdateSingkronisasiPutDataBknAngkaKredit)
-	routeSingkronisasiBKN.PUT("/putsDataBKNCpns/:nip", app.UpdateSingkronisasiPutDataBknCpns)
+	routeSingkronisasiBKN.PUT("/putsDataBKNCpnsPns/:nip", app.UpdateSingkronisasiPutDataBknCpnsPns)
+	routeSingkronisasiBKN.PUT("/putsUnorJabatan/:nip", app.UpdateSingkronisasiPutUnorJabatan)
 	routeSingkronisasiBKN.DELETE("/delDataBKNAK/:id", app.DeleteSingkronisasiDelDataBknAngkaKredit)
+	routeSingkronisasiBKN.DELETE("/delRiwJabatan/:id", app.DeleteSingkronisasiDelRiwJabatan)
 
 	//Stlud
 	routeStlud := e.Group("/stlud")

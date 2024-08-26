@@ -174,7 +174,7 @@ function formatNip(nip) {
 
 const router = useRouter()
 
-function EditData(nip, nama, file_bmp){
+function EditData(nip){
 	const snip = $encodeBase64(nip)
 	navigateTo({ path: '/pegawai/'+snip+'/DataInduk/identitas' })
 }
@@ -187,7 +187,7 @@ function EditData(nip, nama, file_bmp){
 		<div class="flex flex-col mb-6">
 			<div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
 				<!-- Header -->
-				<div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200">
+				<div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center">
 					<div>
 						<h2 class="text-xl font-semibold text-gray-800">
 							Data Pegawai
@@ -208,62 +208,83 @@ function EditData(nip, nama, file_bmp){
 				</div>
 				<!-- End Header -->
 
-				<!-- Accordion -->
-				<div class="border-b border-gray-200 bg-gray-50">
+				<div class="hs-accordion-group">
+				  <div class="hs-accordion bg-gray-100 border border-x-0 -mt-px" id="hs-bordered-heading-two">
+    				<button class="hs-accordion-toggle hs-accordion-active:text-blue-600 inline-flex items-center gap-x-3 w-full font-semibold text-start text-gray-800 py-4 px-5 hover:text-gray-500 disabled:opacity-50 disabled:pointer-events-none" aria-controls="hs-basic-bordered-collapse-two">
+      				<svg class="hs-accordion-active:block hidden size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        				<path d="M5 12h14"></path>
+      				</svg>
+      				<svg class="hs-accordion-active:hidden block size-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+							  <path d="M14 2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2.172a2 2 0 0 0 .586 1.414l2.828 2.828A2 2 0 0 1 6 9.828v4.363a.5.5 0 0 0 .724.447l2.17-1.085A2 2 0 0 0 10 11.763V9.829a2 2 0 0 1 .586-1.414l2.828-2.828A2 2 0 0 0 14 4.172V2Z" />
+							</svg>
+      				Filter Lainnya
+    				</button>
+    				<div id="hs-basic-bordered-collapse-two" class="hs-accordion-content hidden w-full transition-[height] duration-300" aria-labelledby="hs-bordered-heading-two">
+      				<div class="pb-4 px-5">
+        				<div class="gap-2 text-gray-800">
+									<div class="flex flex-col gap-2">
+										<!--Unit Kerja -->
+										<div class="grid sm:grid-cols-12 gap-1 pt-8 pb-2 first:pt-0 last:pb-0 border-t first:border-transparent border-gray-200">
+							        <label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+						            Unit Kerja
+						          </label>
+							        <!-- End Col -->
+							        <div class="sm:col-span-11 px-1 my-auto">
+							        	<SearchSelect2 v-if="!pendingRef" ref="refOpd" id="opd_utama" :options="opds_utama" keyList="id" namaList="nama" v-model="searchOpd" />
+							        </div>
+									     
+											<template v-if="opds_utama">
+								        <label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+						            	Sub Unit Kerja
+						          	</label>
+								        <!-- End Col -->
+								        <div class="sm:col-span-11 px-1 my-auto">
+							        		<SearchSelect2 v-if="!pendingRef" ref="refSubOpd" id="sub_opd_utama" :options="sub_opds_utama" keyList="id" namaList="nama" v-model="searchSubOpd" />
+							        	</div>
+											</template>
+
+											<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+					            	Jenis Jabatan
+					          	</label>
+							        <!-- End Col -->
+							        <div class="sm:col-span-5 px-1 my-auto">
+						        		<SearchSelect2 v-if="!pendingRef" ref="refJenisJabatan" id="jenisjabatans" :options="jenisjabatans" keyList="id" namaList="nama" v-model="searchJJ" />
+						        	</div>
+
+											<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+					            	Eselon
+					          	</label>
+									    <!-- End Col -->
+									    <div class="sm:col-span-5 px-1 my-auto">
+						        		<SearchSelect2 v-if="!pendingRef" ref="refEselon" id="eselons" :options="eselons" keyList="id" namaList="nama" v-model="searchEselon" />
+						        	</div>
+
+											<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+					            	Status Pegawai 
+					          	</label>
+									    <!-- End Col -->
+									    <div class="sm:col-span-5 px-1 my-auto">
+						        		<SearchSelect2 v-if="!loading" ref="refStatusPegawai" id="statuspegawais" :options="statuspegawais" keyList="kstatus" namaList="nama" v-model="searchStatusPegawai" multiple="multiple" />
+						        	</div>
+
+											<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
+						            Jenis Pegawai
+						          </label>
+							        <!-- End Col -->
+							        <div class="sm:col-span-5 px-1 my-auto">
+						        		<SearchSelect2 v-if="!loading" ref="refJenisPegawai" id="jenispegawais" :options="jenispegawais" keyList="id" namaList="nama" v-model="searchJenisPegawai" multiple="multiple" />
+						        	</div>
+										</div>
+									</div>
+								</div>
+      				</div>
+    				</div>
+  				</div>
+				</div>
+
+				<div class="bg-gray-50">
 					<div class="p-4 gap-2 text-gray-800">
 						<div class="flex flex-col gap-2">
-							<!--Unit Kerja -->
-							<div class="grid sm:grid-cols-12 gap-1 pt-8 pb-2 first:pt-0 last:pb-0 border-t first:border-transparent border-gray-200">
-				        <label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
-			            Unit Kerja
-			          </label>
-				        <!-- End Col -->
-				        <div class="sm:col-span-11 px-1 my-auto">
-				        	<SearchSelect2 v-if="!pendingRef" ref="refOpd" id="opd_utama" :options="opds_utama" keyList="id" namaList="nama" v-model="searchOpd" />
-				        </div>
-						     
-								<template v-if="opds_utama">
-					        <label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
-			            	Sub Unit Kerja
-			          	</label>
-					        <!-- End Col -->
-					        <div class="sm:col-span-11 px-1 my-auto">
-				        		<SearchSelect2 v-if="!pendingRef" ref="refSubOpd" id="sub_opd_utama" :options="sub_opds_utama" keyList="id" namaList="nama" v-model="searchSubOpd" />
-				        	</div>
-								</template>
-
-								<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
-		            	Jenis Jabatan
-		          	</label>
-				        <!-- End Col -->
-				        <div class="sm:col-span-5 px-1 my-auto">
-			        		<SearchSelect2 v-if="!pendingRef" ref="refJenisJabatan" id="jenisjabatans" :options="jenisjabatans" keyList="id" namaList="nama" v-model="searchJJ" />
-			        	</div>
-
-								<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
-		            	Eselon
-		          	</label>
-						    <!-- End Col -->
-						    <div class="sm:col-span-5 px-1 my-auto">
-			        		<SearchSelect2 v-if="!pendingRef" ref="refEselon" id="eselons" :options="eselons" keyList="id" namaList="nama" v-model="searchEselon" />
-			        	</div>
-
-								<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
-		            	Status Pegawai 
-		          	</label>
-						    <!-- End Col -->
-						    <div class="sm:col-span-5 px-1 my-auto">
-			        		<SearchSelect2 v-if="!loading" ref="refStatusPegawai" id="statuspegawais" :options="statuspegawais" keyList="kstatus" namaList="nama" v-model="searchStatusPegawai" multiple="multiple" />
-			        	</div>
-
-								<label class="inline-block sm:col-span-1 text-sm font-medium mt-2.5">
-			            Jenis Pegawai
-			          </label>
-				        <!-- End Col -->
-				        <div class="sm:col-span-5 px-1 my-auto">
-			        		<SearchSelect2 v-if="!loading" ref="refJenisPegawai" id="jenispegawais" :options="jenispegawais" keyList="id" namaList="nama" v-model="searchJenisPegawai" multiple="multiple" />
-			        	</div>
-							</div>
 							<div class="grid sm:grid-cols-12 gap-1 pt-2 first:pt-0 last:pb-0 border-t first:border-transparent border-gray-200">
 								<label class="inline-block sm:col-span-1 whitespace-nowrap text-sm font-medium mt-2.5">
 		            	NIP
@@ -313,17 +334,17 @@ function EditData(nip, nama, file_bmp){
 									</th>
 									<th scope="col" class="px-3 text-center">
 										<span class="text-xs font-semibold uppercase text-gray-800">
+											Nama
+										</span>
+									</th>
+									<th scope="col" class="px-3 text-center">
+										<span class="text-xs font-semibold uppercase text-gray-800">
 											NIK
 										</span>
 									</th>
 									<th scope="col" class="px-3 text-center">
 										<span class="text-xs font-semibold uppercase text-gray-800">
 											NPWP
-										</span>
-									</th>
-									<th scope="col" class="px-3 text-center">
-										<span class="text-xs font-semibold uppercase text-gray-800">
-											Nama
 										</span>
 									</th>
 									<th scope="col" class="px-3 text-center">
@@ -433,24 +454,24 @@ function EditData(nip, nama, file_bmp){
 								{{data}}
 								<tbody class="divide-y divide-gray-200">
 									<template v-if="dataPegawai" v-for="(pegawai, idx) in paginate_pegawais" :key="idx">
-										<tr class="odd:bg-white even:bg-gray-100" @click="EditData(pegawai.nip, pegawai.nama, pegawai.file_bmp)">
+										<tr class="odd:bg-white even:bg-gray-100" @click="EditData(pegawai.nip)">
 											<td class="size-px p-1" style="vertical-align: top;">
 												<span class="flex justify-center text-xs px-3 py-0">{{idx+from+1}}</span>
 											</td>
-											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+											<td class="size-px p-1" style="vertical-align: top; min-width: 150px;">
 												<span class="flex justify-center text-center text-xs py-0">{{formatNip(pegawai.nip)}}</span>
-											</td>
-											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
-												<span class="flex justify-center text-center text-xs py-0">{{pegawai.nik}}</span>
-											</td>
-											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
-												<span class="flex justify-center text-center text-xs py-0">{{pegawai.npwp}}</span>
 											</td>
 											<td class="size-px p-1" style="vertical-align: top; min-width: 150px;">
 												<span class="flex justify-start text-xs py-0">
 													{{pegawai.gldepan ? pegawai.gldepan + ". ": ""}}
 													{{pegawai.nama}}{{pegawai.glblk ? ", "+pegawai.glblk: ""}}
 												</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
+												<span class="flex justify-center text-center text-xs py-0">{{pegawai.nik}}</span>
+											</td>
+											<td class="size-px p-1" style="vertical-align: top; min-width: 150px;">
+												<span class="flex justify-center text-center text-xs py-0">{{pegawai.npwp}}</span>
 											</td>
 											<td class="size-px p-1" style="vertical-align: top; min-width: 100px;">
 												<span class="flex justify-center text-center text-xs py-0">{{pegawai.ktlahir}}<br>{{$dayjs(pegawai.tlahir).format("DD-MM-YYYY").toString()}}</span>

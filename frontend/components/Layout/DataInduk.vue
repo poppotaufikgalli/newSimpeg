@@ -104,16 +104,16 @@
 										Identitas Pegawai
 									</NuxtLink>
 									<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/DataInduk/cpns`">
-										CPNS
+										CPNS 
 									</NuxtLink>
 									<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/DataInduk/pns`">
-										PNS
+										PNS 
 									</NuxtLink>
 									<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="{ path: '/pegawai/'+snip+'/DataInduk/pangkat', query: { akhir: true}}" >
 										Pangkat Terakhir
 									</NuxtLink>
 									<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="{ path: '/pegawai/'+snip+'/DataInduk/jabatan', query: { akhir: true}}" >
-										Jabatan Terakhir
+										Jabatan Terakhir 
 									</NuxtLink>
 									<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="{ path: '/pegawai/'+snip+'/DataInduk/tugas-tambahan', query: { akhir: true}}" >
 										Tugas Tambahan

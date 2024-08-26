@@ -3,11 +3,10 @@ const emit = defineEmits(['update:modelValue']);
 const props = defineProps(['modelValue', 'options', 'keyList', 'namaList', 'id', 'multiple', 'disabled']);
 
 onMounted(() => {
-	//console.log(`onMounted, ${props.id} - ${props.modelValue} - ${props.multiple}`)
 	HSStaticMethods.autoInit();
+	//console.log(props.id, props.options)
 	
 	const eli = HSSelect.getInstance('#'+props.id);
-	//console.log(props.multiple == 'multiple')
 
 	if(props.multiple == 'multiple'){
 		Object.values(props.modelValue).map(val => {
@@ -28,6 +27,12 @@ onMounted(() => {
 		}
 	}
 });
+
+const optionsInit = computed({
+	get(){
+		return _slice(props.options, 0, 200)
+	}
+})
 
 const reinit = () => {
 	//console.log(props.options)
@@ -50,14 +55,15 @@ const reinit = () => {
 	}
 }
 
-const readOptions = () => {
-	return props.options[0][props.namaList]
+const readOptions = (val) => {
+	const eli = HSSelect.getInstance('#'+props.id);
+	return eli.el.selectedOptions[0].text
 }
 
 defineExpose({reinit, readOptions});
 
 function truncating(text){
-	if(text.length > 5){
+	if(text != null && text.length > 5){
 		return text.slice(0,5)+'...'
 	}
 	return text
@@ -94,7 +100,7 @@ function truncating(text){
 		  		"extraMarkup": "<div class=\"absolute top-1/2 end-3 -translate-y-1/2\"><svg class=\"flex-shrink-0 size-3.5 text-gray-500\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m7 15 5 5 5-5\"/><path d=\"m7 9 5-5 5 5\"/></svg></div>"
 				}' class="hidden" :value="modelValue" :disabled="disabled">
 		  			<option value="">Choose</option>
-		  			<option v-for="(item, idx) in options" :key="idx" :value="item[keyList]">{{truncating(item[keyList])}}-{{item[namaList]}}</option>
+		  			<option v-for="(item, idx) in optionsInit" :key="idx" :value="item[keyList]">{{truncating(item[keyList])}}-{{item[namaList]}}</option>
 			</select>
 		</template>
 	</div>

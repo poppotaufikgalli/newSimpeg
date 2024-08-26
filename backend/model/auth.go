@@ -14,6 +14,7 @@ type UsersToken struct {
 	IdOpd     string     `json:"id_opd"`
 	ParentOpd string     `json:"parent_opd"`
 	TokenId   string     `json:"token_id"`
+	Gid       int        `json:"gid"`
 	LoginAt   *time.Time `json:"login_at"`
 	LogoutAt  *time.Time `json:"logout_at"`
 	ExpiresAt *time.Time `json:"expires_at"`

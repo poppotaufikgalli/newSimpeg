@@ -18,7 +18,7 @@ func GetJenisDiklat(searchString model.SearchJenisDiklat) (jenis_diklat []model.
 	result = db.Model(&model.JenisDiklat{})
 
 	//id
-	if searchString.Id != "" {
+	if searchString.Id > 0 {
 		result = result.Where("master_jenis_diklat.id = ?", searchString.Id)
 	}
 
@@ -27,6 +27,11 @@ func GetJenisDiklat(searchString model.SearchJenisDiklat) (jenis_diklat []model.
 		nama := strings.TrimSpace(searchString.Nama)
 		str := []string{"%", nama, "%"}
 		result = result.Where("master_jenis_diklat.nama LIKE ?", strings.Join(str, ""))
+	}
+
+	//nama
+	if searchString.RefBkn != "" {
+		result = result.Where("master_jenis_diklat.ref_bkn = ?", searchString.Id)
 	}
 
 	//status

@@ -15,7 +15,7 @@ const { pending, data, refresh } = await useAsyncData('getDataTokenInfo', async 
 	
 	let nip = $decodeBase64(snip)
   	const [dataSync, dataRiwayat] = await Promise.all([
-    	$fetch('/api/gets/singkronisasi/bkn'),
+    	$fetch('/api/gets/singkronisasi/bkn/expiredTime'),
     	$fetch('/api/posts/singkronisasi_bkn/riwayat', {
     		method: 'POST',
     		body: JSON.stringify({
@@ -34,22 +34,25 @@ async function updateToken(type){
 		method: 'POST',
 		body: JSON.stringify({
 			type: type,
-			ckey: dataSyncs.value.ckey,
-			csecret: dataSyncs.value.csecret,
-			client_id: dataSyncs.value.client_id,
-			username: dataSyncs.value.username,
-			password: dataSyncs.value.password,
+			//ckey: dataSyncs.value.ckey,
+			//csecret: dataSyncs.value.csecret,
+			//client_id: dataSyncs.value.client_id,
+			//username: dataSyncs.value.username,
+			//password: dataSyncs.value.password,
 		})
 	})
+
+	//console.log(result)
 	
 	//const {token_sso_expired, token_apimanager_expired} = result
-	if(type == 'token_sso'){
+	/*if(type == 'token_sso'){
 		dataSyncs.value.token_sso_expired = dayjs(result.token_sso_expired).format('YYYY-MM-DDTHH:mm:ssZ')
 	}
 
 	if(type == 'token_apimanager'){
 		dataSyncs.value.token_apimanager_expired = dayjs(result.token_apimanager_expired).format('YYYY-MM-DDTHH:mm:ssZ')
-	}
+	}*/
+	refreshNuxtData(["getDataTokenInfo"])
 	showSpinner.value = false
 }
 

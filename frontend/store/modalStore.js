@@ -15,7 +15,7 @@ export const useModalStore = defineStore('modal-store', () => {
         displayModal.value = false
     }
 
-    function doAction() {
+    function doAction(keyVal) {
         modalAction.value = true
         displayModal.value = false
     }

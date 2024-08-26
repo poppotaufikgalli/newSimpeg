@@ -1,5 +1,15 @@
 export default defineEventHandler(async(event) => {
-    const ep = event.context.params._
+    let ep = event.context.params._
+    const {searchNama, limit} = getQuery(event)
+
+    if(searchNama != undefined){
+        ep = ep + "?searchNama="+searchNama
+
+        if(limit != undefined){
+            ep = ep + "&limit="+limit
+        }
+    }
+
     const response = await $apiClient(event, "/"+ep)
     const {data} = response
     return data;

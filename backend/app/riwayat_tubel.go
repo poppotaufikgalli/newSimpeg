@@ -9,78 +9,86 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	model "newSimpegAPI/model"
-	//"strings"
+	"strings"
 )
 
-func GetRiwayatP2kp(searchString model.SearchRiwayatP2kp) (riwayat_p2kp []model.RiwayatP2kp, result *gorm.DB) {
+func GetRiwayatTubel(searchString model.SearchRiwayatTubel) (riwayat_tubel []model.RiwayatTubel, result *gorm.DB) {
 	db, _ := model.CreateCon()
 
-	result = db.Model(&model.RiwayatP2kp{})
+	result = db.Model(&model.RiwayatTubel{})
+
+	//id
+	if searchString.ID > 0 {
+		result = result.Where("master_riwayat_tubel.id = ?", searchString.ID)
+	}
 
 	//nip
 	if searchString.Nip != "" {
-		result = result.Where("master_riwayat_p2kp.nip = ?", searchString.Nip)
+		result = result.Where("master_riwayat_tubel.nip = ?", searchString.Nip)
 	}
 
-	//thnilai
-	if searchString.Thnilai > 0 {
-		result = result.Where("master_riwayat_p2kp.thnilai = ?", searchString.Thnilai)
+	//ktpu
+	if searchString.Ktpu != "" {
+		result = result.Where("master_riwayat_tubel.ktpu = ?", searchString.Ktpu)
 	}
 
-	//tmulai
-	if searchString.Tmulai.IsZero() != true {
-		result = result.Where("master_riwayat_p2kp.tmulai = ?", searchString.Tmulai)
+	//nsek
+	if searchString.Nsek != "" {
+		nama := strings.TrimSpace(searchString.Nsek)
+		str := []string{"%", nama, "%"}
+		result = result.Where("master_riwayat_tubel.nsek LIKE ?", strings.Join(str, ""))
 	}
 
-	//tselesai
-	if searchString.Tselesai.IsZero() != true {
-		result = result.Where("master_riwayat_p2kp.tselesai = ?", searchString.Tselesai)
+	//tempat
+	if searchString.Tempat != "" {
+		nama := strings.TrimSpace(searchString.Tempat)
+		str := []string{"%", nama, "%"}
+		result = result.Where("master_riwayat_tubel.tempat LIKE ?", strings.Join(str, ""))
 	}
 
-	result = result.Find(&riwayat_p2kp)
+	result = result.Preload("TingkatPendidikan").Order("id asc").Find(&riwayat_tubel)
 
 	return
 
 }
 
-func FindRiwayatP2kp(c echo.Context) error {
-	var searchString model.SearchRiwayatP2kp
+func FindRiwayatTubel(c echo.Context) error {
+	var searchString model.SearchRiwayatTubel
 	json.NewDecoder(c.Request().Body).Decode(&searchString)
 
-	riwayat_p2kp, result := GetRiwayatP2kp(searchString)
+	riwayat_tubel, result := GetRiwayatTubel(searchString)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_p2kp,
+		"data":       riwayat_tubel,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 		"filter":     searchString,
 	})
 }
 
-func GetRiwayatP2kpByNipThnTmulai(c echo.Context) error {
+func GetRiwayatTubelByNipId(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_p2kp model.RiwayatP2kp
+	var riwayat_tubel model.RiwayatTubel
 	nip := c.Param("nip")
-	thnilai := c.Param("thnilai")
-	tmulai := c.Param("tmulai")
+	id := c.Param("id")
 
-	result := db.Model(&model.RiwayatP2kp{}).Where("nip = ? and thnilai = ? and tmulai = ?", nip, thnilai, tmulai).Scan(&riwayat_p2kp)
+	result := db.Model(&model.RiwayatTubel{}).Where("nip =? and id =?", nip, id).Scan(&riwayat_tubel)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_p2kp,
+		"data":       riwayat_tubel,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})
 }
 
-func CreateRiwayatP2kp(c echo.Context) error {
+func CreateRiwayatTubel(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_p2kp model.RiwayatP2kp
+	var riwayat_tubel model.RiwayatTubel
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_p2kp)
+	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_tubel)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -89,15 +97,15 @@ func CreateRiwayatP2kp(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_p2kp); err != nil {
+	if err = validate.Struct(riwayat_tubel); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	riwayat_p2kp.CreatedBy = fmt.Sprint(c.Get("nip"))
-	result := db.Create(&riwayat_p2kp)
+	riwayat_tubel.CreatedBy = fmt.Sprint(c.Get("nip"))
+	result := db.Create(&riwayat_tubel)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -107,21 +115,21 @@ func CreateRiwayatP2kp(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_p2kp,
+		"data":       riwayat_tubel,
 		"statucCode": http.StatusOK,
 		"count":      result.RowsAffected,
 	})
 }
 
-func UpdateRiwayatP2kp(c echo.Context) error {
+func UpdateRiwayatTubel(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	//var riwayat_p2kp model.RiwayatP2kp
+	//var riwayat_tubel model.RiwayatTubel
 	validate := validator.New()
 
 	type ToUpdateData struct {
-		Ref  model.DeleteRiwayatP2kp `json:"refdata"`
-		Data model.RiwayatP2kp       `json:"data"`
+		Ref  model.DeleteRiwayatTubel `json:"refdata"`
+		Data model.RiwayatTubel       `json:"data"`
 	}
 
 	var reqData ToUpdateData
@@ -143,9 +151,7 @@ func UpdateRiwayatP2kp(c echo.Context) error {
 	}
 
 	reqData.Data.UpdatedBy = fmt.Sprint(c.Get("nip"))
-	Tmulai := (reqData.Ref.Tmulai).Format("2006-01-02")
-	Tselesai := (reqData.Ref.Tselesai).Format("2006-01-02")
-	result := db.Model(&model.RiwayatP2kp{}).Where("nip = ? and thnilai = ? and tmulai = ? and tselesai = ?", reqData.Ref.Nip, reqData.Ref.Thnilai, Tmulai, Tselesai).Updates(&reqData.Data)
+	result := db.Model(&model.RiwayatTubel{}).Where("id = ? and nip = ? and ktpu = ?", reqData.Ref.ID, reqData.Ref.Nip, reqData.Ref.Ktpu).Updates(&reqData.Data)
 
 	if result.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -168,13 +174,13 @@ func UpdateRiwayatP2kp(c echo.Context) error {
 	})
 }
 
-func DeleteRiwayatP2kp(c echo.Context) error {
+func DeleteRiwayatTubel(c echo.Context) error {
 	db, _ := model.CreateCon()
 
-	var riwayat_p2kp model.DeleteRiwayatP2kp
+	var riwayat_tubel model.DeleteRiwayatTubel
 	validate := validator.New()
 
-	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_p2kp)
+	err := json.NewDecoder(c.Request().Body).Decode(&riwayat_tubel)
 
 	if err != nil {
 		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
@@ -183,14 +189,14 @@ func DeleteRiwayatP2kp(c echo.Context) error {
 		})
 	}
 
-	if err = validate.Struct(riwayat_p2kp); err != nil {
+	if err = validate.Struct(riwayat_tubel); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"statucCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}
 
-	result := db.Model(&model.RiwayatP2kp{}).Where("nip = ? and thnilai = ? and tmulai = ? and tselesai = ?", riwayat_p2kp.Nip, riwayat_p2kp.Thnilai, riwayat_p2kp.Tmulai, riwayat_p2kp.Tselesai).Delete(&riwayat_p2kp)
+	result := db.Model(&model.RiwayatTubel{}).Where("id = ? and nip = ? and ktpu = ?", riwayat_tubel.ID, riwayat_tubel.Nip, riwayat_tubel.Ktpu).Delete(&riwayat_tubel)
 
 	if result.RowsAffected == 0 {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{
@@ -200,7 +206,7 @@ func DeleteRiwayatP2kp(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data":       riwayat_p2kp,
+		"data":       riwayat_tubel,
 		"statucCode": http.StatusOK,
 	})
 }

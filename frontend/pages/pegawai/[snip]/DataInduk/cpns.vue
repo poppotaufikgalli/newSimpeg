@@ -25,6 +25,7 @@ const dataCpns = ref({
 	tskpang: '',
 	tmtpang: '',
 	kgolru: '',
+	nlgas:'',
 	tmtlgas: '',
 	mskerja: 0,
 	blnkerja: 0,
@@ -33,6 +34,7 @@ const dataCpns = ref({
 	nsttpp: '',
 	tsttpp: '',
 	filename: '',
+	filename_spmt: '',
 })
 
 const pejabats = ref([])
@@ -47,6 +49,7 @@ const { pending, data, refresh} = await useAsyncData('getDataCPNS', async() => {
 		let nip = $decodeBase64(snip)
 		//dataCpns.value = await $fetch('/api/gets/riwayat_pangkat/'+nip+'/cpns');
 		var result = await $fetch('/api/gets/riwayat_pangkat/'+nip+'/cpns');
+		//var result = await $fetch('/api/gets/cpns/'+nip);
 
 		if(result.nip == nip){
 			method.value = "Update"
@@ -144,7 +147,7 @@ const tsttpp = computed({
 const showSpinner = ref(false)
 const toast = useToast()
 
-async function simpanData(lvl) {
+async function simpanData() {
 	showSpinner.value = true
 
 	var compacted = dataCpns.value;
@@ -175,20 +178,27 @@ async function simpanData(lvl) {
 			body: JSON.stringify(body),
 		})
 
-		console.log(error)
+		console.log(data.value)
+		console.log(error.value.data.data)
 
 		if(error.value){
+			const {title, description} = error.value.data.data
 			toast.add({
-		    	id: 'error_put_cpns',
-		    	description: error.value.data.data,
-		    	timeout: 6000
-		  	}) 	
+				id: 'error_put_cpns',
+				icon: "i-heroicons-x-circle",
+				title: title,
+				description: description,
+				timeout: 6000,
+				color: 'red',
+			}) 	
 		}else{
 			toast.add({
-		    	id: 'success_put_cpns',
-		    	description: "Data berhasil di Update",
-		    	timeout: 6000
-		  	}) 	
+				id: 'success_put_cpns',
+				icon: "i-heroicons-check-circle",
+				title: "Update Data Berhasil",
+				description: "Data telah di Update",
+				timeout: 6000
+			}) 	
 		}
 	}else{
 		compacted.nip = $decodeBase64(snip)
@@ -200,77 +210,68 @@ async function simpanData(lvl) {
 		})
 
 		if(error.value){
+			const {title, description} = error.value.data.data
 			toast.add({
-		    	id: 'error_post_cpns',
-		    	description: error.value.data.data,
-		    	timeout: 6000
-		  	}) 	
+				id: 'error_post_cpns',
+				icon: "i-heroicons-x-circle",
+				title: title,
+				description: description,
+				timeout: 6000,
+				color: 'red',
+			}) 	
 		}else{
 			toast.add({
-		    	id: 'success_post_cpns',
-		    	description: "Data berhasil di Ditambahkan",
-		    	timeout: 6000
-		  	}) 	
+				id: 'success_post_cpns',
+				icon: "i-heroicons-check-circle",
+				description: "Data berhasil di Ditambahkan",
+				timeout: 6000
+			}) 	
 		}
 	}
   	showSpinner.value = false
 
-  	if(lvl == 2){
+  	/*if(lvl == 2){
   		//save cpns bkn
-  		let dataCpnsBkn = {
-  			nomor_sk_cpns : dataCpns.value.nskpang,
-			nomor_spmt	: dataCpns.value.nomor_spmt,
-			nomor_sttpl	: dataCpns.value.nsttpp,
-			pertek_cpns_pns_l2th_nomor	: dataCpns.value.nntbakn,
-			pertek_cpns_pns_l2th_tanggal	: dataCpns.value.tntbakn,
-			//pns_orang_id	:dataCpns.value.no_ref_bkn,
-			status_cpns_pns	: "cpns",
-			tgl_sk_cpns	: dataCpns.value.tskpang,
-			tgl_sttpl	: dataCpns.value.tsttpp,
-  		}
-
 	    let nip = $decodeBase64(snip)
-	    var {data, error} = await useFetch('/api/puts/singkronisasi_bkn/putsDataBKNCpns/'+nip, {
-	        method: 'POST',
-	        body: JSON.stringify(dataCpnsBkn),
+	    var {data, error} = await useFetch('/api/puts/singkronisasi_bkn/putsDataBKNCpnsPns/'+nip, {
+	        method: 'PUT',
 	    })
 
 	    console.log(data.value)
 	    console.log(error.value)
 
-	    if(data.value.success){
-	    	compacted.idSync = data.value?.mapData?.rwAngkaKreditId;
-	    }
-
 	    if(error.value){
 	        toast.add({
 	            id: 'error_put_singkronisasi_ak',
-	            description: error.value.data.data,
+	            description: error,
 	            timeout: 6000,
 	            color: 'red',
 	        })  
 	    }else{
 	        toast.add({
 	            id: 'success_post_singkronisasi_ak',
-	            description: data.value.success == true ? "Data BKN Update Success |" : "Data BKN Update Failed |"  +data.value.message,
+	            description: data.value.code == 1 ? "Data BKN Update Success |" : "Data BKN Update Failed |"  +data.value.data,
 		    	timeout: 6000,
-		    	color:  data.value.success == "1" ? 'green' : 'red',
+		    	color:  data.value.code == 1 ? 'green' : 'red',
 	        })  
 	    }
   		//end save cpns bkn
-  	}
+  	}*/
 
   	refreshNuxtData(["getDataRef", "getDataCPNS"])
 }
 
-const doUploadDoc = async() => {
+const selUploadDoc = ref(null)
+
+const doUploadDoc = async(caption, doc) => {
 	let nip = $decodeBase64(snip)
-	var fileDisplay = await $fetch(`/api/fileserver/static/dokumen/${nip}/${dataCpns.value.filename}`)
+	selUploadDoc.value = doc
+	var fileDisplay = await $fetch(`/api/fileserver/static/dokumen/${nip}/${nip}_${doc}.pdf`)
 	if(fileDisplay != null){
 		const blobUrl = URL.createObjectURL(fileDisplay)
-		modalUploadDoc.showModal(`Upload Dokumen CPNS`, "application/pdf", blobUrl)	
+		modalUploadDoc.showModal(`Upload Dokumen ${caption}`, "application/pdf", blobUrl)	
 	}else{
-		modalUploadDoc.showModal(`Upload Dokumen CPNS`, "application/pdf", null)	
+		modalUploadDoc.showModal(`Upload Dokumen ${caption}`, "application/pdf", null)	
 	}
 }
 
@@ -287,7 +288,8 @@ const callback = async(e) => {
 		formData.append("knpang", 211);
 
 		formData.append("file", fileBlob.value[0]);
-		formData.append("filename", nip+"_cpns");
+		formData.append("updateField", selUploadDoc.value == 'spmt' ? "filename_spmt" : "filename");
+		formData.append("filename", nip+"_"+selUploadDoc.value);
 		formData.append("path", 'dokumen/'+nip);
 
 		var {data, error} = await useFetch(`/api/uploads/upload/pangkat/${nip}`, {
@@ -304,7 +306,7 @@ const callback = async(e) => {
 		}else{
 			toast.add({
 		    	id: 'success_post_upload_cpns',
-		    	description: `Dokumen CPNS berhasil di Upload`,
+		    	description: `Dokumen ${selUploadDoc.value} berhasil di Upload`,
 		    	timeout: 6000
 		  	}) 	
 		}
@@ -391,18 +393,6 @@ const callback = async(e) => {
 						</div>
 
 						<div class="sm:col-span-3">
-							<label class="inline-block text-sm text-gray-800 mt-2.5">Tanggal Melaksanakan Tugas</label>
-						</div>
-						<!-- End Col -->
-
-						<div class="sm:col-span-9">
-							<div class="sm:flex gap-2">
-								<input type="date" class="py-2 px-3 block w-[30%] border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tmtlgas">
-							</div>
-						</div>
-						<!-- End Col -->
-
-						<div class="sm:col-span-3">
 							<label class="inline-block text-sm text-gray-800 mt-2.5">Masa Kerja CPNS</label>
 						</div>
 						<!-- End Col -->
@@ -418,7 +408,20 @@ const callback = async(e) => {
 						<div class="sm:col-span-12 my-2 first:pt-0 last:pb-0 border-t first:border-transparent border-gray-200"></div>
 
 						<div class="sm:col-span-3">
-							<label class="inline-block text-sm text-gray-800 mt-2.5">Nomor STTPP</label>
+							<label class="inline-block text-sm text-gray-800 mt-2.5">Surat Pernyataan Melaksanakan Tugas (SPMT)</label>
+						</div>
+						<!-- End Col -->
+
+						<div class="sm:col-span-9">
+							<div class="sm:flex gap-2">
+								<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataCpns.nlgas">
+								<input type="date" class="py-2 px-3 block w-[30%] border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tmtlgas">
+							</div>
+						</div>
+						<!-- End Col -->
+
+						<div class="sm:col-span-3">
+							<label class="inline-block text-sm text-gray-800 mt-2.5">STTPP (Prajab/Latsar)</label>
 						</div>
 						<!-- End Col -->
 
@@ -431,7 +434,7 @@ const callback = async(e) => {
 						<!-- End Col -->
 
 						<div class="sm:col-span-3">
-							<label class="inline-block text-sm text-gray-800 mt-2.5">Surat Kesehatan</label>
+							<label class="inline-block text-sm text-gray-800 mt-2.5">Surat Pemeriksaan Kesehatan (Dokter)</label>
 						</div>
 						<!-- End Col -->
 
@@ -442,7 +445,6 @@ const callback = async(e) => {
 							</div>
 						</div>
 						<!-- End Col -->
-
 					</div>
 					<div class="mt-5 grid sm:grid-cols-12 gap-x-2">
 						<div class="sm:col-span-7 sm:col-start-4">
@@ -450,29 +452,30 @@ const callback = async(e) => {
 								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" @click="refresh">
 					  				Batal
 								</button>
-								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(0)">
-					  				{{method}} Data [0]
-								</button>	
-								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(1)">
-					  				{{method}} Data [1]
-								</button>	
-								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData(2)">
-					  				{{method}} Data [2]
+								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData()">
+					  				{{method}} Data
 								</button>	
 							</div>
-						</div>
-						<!-- End Col -->
-
-						<div class="sm:col-span-2 flex justify-end" v-if="method == 'Update'">
-							<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none" v-on:click="doUploadDoc()">
-				  				Upload File
-							</button>
 						</div>
 						<!-- End Col -->
 		  			</div>
 				</form>
 	  		</div>
 	  		<!-- End Card -->
+
+	  		<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2 mt-6" v-if="method == 'Update'">
+				<div class="mb-8">
+					<h2 class="text-xl font-bold text-blue-600">Dokumen CPNS</h2>
+				</div>
+				<div class="grid sm:grid-cols-4 gap-2 gap-2.5">
+					<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="doUploadDoc('CPNS','cpns')">
+		  				SK CPNS
+					</button>
+					<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="doUploadDoc('SPMT','spmt')">
+		  				SPMT
+					</button>
+				</div>
+			</div>
 		</div>
 		<!-- End Card Section -->
 	</LayoutDataInduk>

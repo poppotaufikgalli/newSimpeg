@@ -1,13 +1,19 @@
 <script setup>
 import { useModalUploadDoc } from '~/store/modalUploadDoc';
+const dayjs = useDayjs()
+import customParseFormat from "dayjs/plugin/customParseFormat";
+dayjs.extend(customParseFormat)
 
 const modalUploadDoc = useModalUploadDoc();
 const { fileBlob } = storeToRefs(modalUploadDoc)
 
 const { $decodeBase64, $encodeBase64 } = useNuxtApp()
 const route = useRoute()
-const dayjs = useDayjs()
+
 const {snip, sktpu, skjur} = route.params
+const {sdataBkn} = route.query
+const showSpinner = ref(false)
+const toast = useToast()
 
 const dataRefPendum = ref({
 	nip: '',
@@ -19,6 +25,7 @@ const dataPendum = ref({
 	nip: '',
 	ktpu: '',
 	kjur:'',
+	kjur_bkn:'',
 	nsek: '',
 	tempat: '',
 	nkepsek: '',
@@ -32,35 +39,12 @@ const dataPendum = ref({
 })
 
 const jurusans = ref([])
-const jurusanss = ref([])
+const jurusans_simpegs = ref([])
+const jurusans_bkns = ref([])
 const ktpus = ref([])
 const refKjur = ref(null)
 const refKtpu = ref(null)
 const method = ref('Simpan')
-
-const { pending: pendingRef, data: dataRef, refresh: refreshDataRef } = await useLazyAsyncData('getDataRef', async () => {
-	
-  	const [ktpu, jurusan] = await Promise.all([
-    	$fetch('/api/gets/tingkat_pendidikan'),
-    	$fetch('/api/gets/pendidikan'),
-  	])
-
-  	var aktpu = _sortBy(ktpu, [function(o){
-  		return o.id *1
-  	}])
-
-  	ktpus.value = aktpu
-  	jurusans.value = jurusan
-  	jurusanss.value = jurusan
-
-	if(refKtpu){
-		refKtpu.value.reinit()
-	}
-
-	if(refKjur){
-		refKjur.value.reinit()
-	}
-});
 
 const { pending, data, refresh} = await useAsyncData('getdataPendum', async() => {
 	console.log("CariData")
@@ -82,34 +66,82 @@ const { pending, data, refresh} = await useAsyncData('getdataPendum', async() =>
 			})
 		}
 	}
-})
+
+  	const [ktpu, jurusan] = await Promise.all([
+    	$fetch('/api/gets/tingkat_pendidikan'),
+    	$fetch('/api/gets/pendidikan'),
+  	])
+
+  	var aktpu = _sortBy(ktpu, [function(o){
+  		return o.id *1
+  	}])
+
+  	ktpus.value = aktpu
+  	jurusans.value = jurusan
+  	jurusans_bkns.value = jurusan
+
+	if(refKtpu){
+		refKtpu.value.reinit()
+	}
+
+	cariJurusan()
+});
 
 const ktpu = computed({
 	get(){
 		return dataPendum.value.ktpu
 	},
 	set(val){
+		console.log("ktpu value")
 		dataPendum.value.ktpu = val
-
-		cariJurusan(val)
+		cariJurusan()
 	}
 })
 
-async function cariJurusan(val){
-	var item = _find(ktpus.value, {id: val})
-	var result = await $fetch(`/api/posts/pendidikan/`, {
-		method: "POST",
-		body: JSON.stringify({
-			'tk_pendidikan_id' : item.ref_simpeg.split(", ")
+
+async function cariJurusan(){
+	var sktpu_x = dataPendum.value.ktpu
+	var item = _find(ktpus.value, {id: sktpu_x})
+	console.log("ktpu", ktpus.value, sktpu_x)
+	if(item){
+		var result = _filter(jurusans.value, function(o){
+			//console.log(o.tk_pendidikan_id, item.ref_simpeg.split(", "))
+			return _includes(item.ref_simpeg.split(", "), o.tk_pendidikan_id)
 		})
-	});
 
-	jurusans.value = result
+		jurusans_simpegs.value = result
 
-	if(refKjur){
-		refKjur.value.reinit()
+		if(refKjur){
+			refKjur.value.reinit()
+		}
 	}
 }
+
+const kjur = computed({
+	get(){
+		return dataPendum.value.kjur
+	},
+	set(val){
+		dataPendum.value.kjur = val
+
+		var result = _find(jurusans_simpegs.value , function(o){
+			return o.id == val
+		})
+
+		if(result.ref_bkn == '' || result.ref_bkn == undefined || result.ref_bkn == null){
+			toast.add({
+				id: 'error_check_jurusan_bkn',
+				icon: "i-heroicons-x-circle",
+				title: "Check Jurusan Pendidikan BKN",
+				description: `Jurusan yang dipilih belum ada referesi jurusan BKN`,
+				timeout: 6000,
+				color: 'red',
+			}) 		
+		}else{
+			dataPendum.value.kjur_bkn = result.ref_bkn	
+		}
+	}
+})
 
 const tsttb = computed({
 	get(){
@@ -137,12 +169,10 @@ const akhir = computed({
 
 onMounted(() => {
 	//refreshNuxtData(["getDataRef", "getdataPendumAkhir"])
-	refreshNuxtData(["getDataRef", "getdataPendum"])
+	//refreshNuxtData(["getDataRef", "getdataPendum"])
+	refreshNuxtData(["getdataPendum"]) 
 	modalUploadDoc.$onAction(callback, false)
 })
-
-const showSpinner = ref(false)
-const toast = useToast()
 
 async function simpanData() {
 	showSpinner.value = true
@@ -263,7 +293,8 @@ function onlyNumber ($event) {
 }
 </script>
 <template>
-	<LayoutRiwayatPegawai>
+	<AppLoadingSpinner :show="showSpinner" />
+	<LayoutRiwayatPendidikan>
 		<div class="mx-auto">
 			<!-- Card -->
 			<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2">
@@ -273,6 +304,7 @@ function onlyNumber ($event) {
 		           		<svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 		          	</button>
 		        </div>
+		        
 				<div class="mb-8">
 					<div class="inline-flex justify-between items-center w-full gap-x-2">
 						<h2 class="text-xl font-bold text-blue-600">Pendidikan Umum</h2>
@@ -287,7 +319,7 @@ function onlyNumber ($event) {
 					<!-- Grid -->
 					<div class="grid sm:grid-cols-12 gap-2 gap-2.5">
 						<div class="sm:col-span-3">
-							<label class="inline-block text-sm text-gray-800 mt-2.5">Tingkat Pendidikan</label>
+							<label class="inline-block text-sm text-gray-800 mt-2.5">Tingkat Pendidikan {{ktpu}}</label>
 						</div>
 						<!-- End Col -->
 
@@ -302,7 +334,18 @@ function onlyNumber ($event) {
 						<!-- End Col -->
 
 						<div class="sm:col-span-9">
-							<SearchSelect2 ref="refKjur" id="jurusans" :options="jurusans" keyList="id" namaList="nama" v-model="dataPendum.kjur"/>
+							<!--<SearchSelect2 ref="refKjur" id="jurusans_simpegs" :options="jurusans_simpegs" keyList="id" namaList="nama" v-model="kjur"/>-->
+							<SearchSelect3 ref="refKjur" id="jurusans_simpegs" apiUrl="/api/gets/pendidikan/filter" keyList="id" namaList="nama" v-model="kjur"/>
+						</div>
+						<!-- End Col -->
+
+						<div class="sm:col-span-3">
+							<label class="inline-block text-sm text-gray-800 mt-2.5">Jurusan Pendidikan BKN *)</label>
+						</div>
+						<!-- End Col -->
+
+						<div class="sm:col-span-9">
+							<SearchSelect3 ref="refKjurBkn" id="jurusan_bkns" apiUrl="/api/gets/pendidikan_bkn/filter" keyList="id" namaList="nama" v-model="dataPendum.kjur_bkn"/>
 						</div>
 						<!-- End Col -->
 
@@ -392,18 +435,21 @@ function onlyNumber ($event) {
 							</div>
 						</div>
 						<!-- End Col -->
-
-						<div class="sm:col-span-3 flex justify-end" v-if="method == 'Update'">
-							<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none" v-on:click="doUploadDoc()">
-				  				Upload File
-							</button>
-						</div>
-						<!-- End Col -->
 		  			</div>
 				</form>
 	  		</div>
 	  		<!-- End Card -->
 		</div>
+		<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2 mt-6" v-if="method == 'Update'">
+			<div class="mb-8">
+				<h2 class="text-xl font-bold text-blue-600">Dokumen Pendidikan Umum</h2>
+			</div>
+			<div class="grid sm:grid-cols-4 gap-2 gap-2.5">
+				<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="doUploadDoc()">
+					Ijazah & Transkript Nilai
+				</button>
+			</div>
+		</div>
 		<!-- End Card Section -->
-	</LayoutRiwayatPegawai>
+	</LayoutRiwayatPendidikan>
 </template>

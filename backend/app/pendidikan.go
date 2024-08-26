@@ -68,6 +68,72 @@ func FindPendidikan(c echo.Context) error {
 	})
 }
 
+func SearchPendidikanFilter(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var pendidikan []model.Pendidikan
+
+	req := model.SearchInput{
+		Limit: 10,
+	}
+
+	fmt.Println(req)
+
+	if err := c.Bind(&req); err != nil {
+		fmt.Println(err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	result := db.Model(&model.Pendidikan{})
+
+	if req.SearchNama != "" {
+		nama := strings.TrimSpace(req.SearchNama)
+		str := []string{"%", nama, "%"}
+		result = result.Where("master_pendidikan.nama LIKE ? or master_pendidikan.id LIKE ?", strings.Join(str, ""), strings.Join(str, ""))
+	}
+
+	result = result.Order("nama asc").Debug().Limit(req.Limit).Find(&pendidikan)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       pendidikan,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
+func SearchPendidikanFilterKtpu(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var pendidikan []model.Pendidikan
+
+	req := model.SearchInput{
+		Limit: 10,
+	}
+
+	ktpu := fmt.Sprintf("tk_pendidikan_id IN (%s)", c.Param("ktpu"))
+
+	fmt.Println(req)
+
+	if err := c.Bind(&req); err != nil {
+		fmt.Println(err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	result := db.Model(&model.Pendidikan{})
+
+	if req.SearchNama != "" {
+		nama := strings.TrimSpace(req.SearchNama)
+		str := []string{"%", nama, "%"}
+		result = result.Where(ktpu).Where("master_pendidikan.nama LIKE ? or master_pendidikan.id LIKE ?", strings.Join(str, ""), strings.Join(str, ""))
+	}
+
+	result = result.Order("nama asc").Debug().Limit(req.Limit).Find(&pendidikan)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       pendidikan,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func CreatePendidikan(c echo.Context) error {
 	db, _ := model.CreateCon()
 

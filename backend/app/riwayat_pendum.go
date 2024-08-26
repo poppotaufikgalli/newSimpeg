@@ -36,14 +36,14 @@ func GetRiwayatPendum(searchString model.SearchRiwayatPendum) (riwayat_pendum []
 	if searchString.Nsek != "" {
 		nama := strings.TrimSpace(searchString.Nsek)
 		str := []string{"%", nama, "%"}
-		result = result.Where("master_riwayat_organisasi.nsek LIKE ?", strings.Join(str, ""))
+		result = result.Where("master_riwayat_pendum.nsek LIKE ?", strings.Join(str, ""))
 	}
 
 	//tempat
 	if searchString.Tempat != "" {
 		nama := strings.TrimSpace(searchString.Tempat)
 		str := []string{"%", nama, "%"}
-		result = result.Where("master_riwayat_organisasi.tempat LIKE ?", strings.Join(str, ""))
+		result = result.Where("master_riwayat_pendum.tempat LIKE ?", strings.Join(str, ""))
 	}
 
 	result = result.Preload("TingkatPendidikan").Preload("Pendidikan").Order("cast(ktpu as unsigned)").Find(&riwayat_pendum)

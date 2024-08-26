@@ -19,6 +19,7 @@ type SearchRiwayatAngkaKredit struct {
 type DeleteRiwayatAngkaKredit struct {
 	Nip    string    `json:"nip" validate:"required"`
 	Tmulai time.Time `json:"tmulai" validate:"required"`
+	IdSync *string   `json:"idSync,omitempty"`
 }
 
 type RiwayatAngkaKredit struct {
@@ -26,6 +27,9 @@ type RiwayatAngkaKredit struct {
 	Jns            string         `json:"jns"`
 	JenjangJabfung JenjangJabfung `gorm:"foreignKey:Jns" json:"jenjang_ft" validate:"-"`
 	Kjab           string         `json:"kjab"`
+	RwJabatanId    uint           `json:"rw_jabatan_id"`
+	RwJabatan      RiwayatJabatan `gorm:"foreignKey:RwJabatanId" validate:"-"`
+	RwJabatanIdBkn *string        `json:"rw_jabatan_id_bkn"`
 	JabatanFt      JabatanFt      `gorm:"foreignKey:Kjab" json:"jabatan_ft" validate:"-"`
 	Tmulai         *time.Time     `json:"tmulai" validate:"required"`
 	Tselesai       *time.Time     `json:"tselesai"`
@@ -36,7 +40,10 @@ type RiwayatAngkaKredit struct {
 	Tsk            *time.Time     `json:"tsk"`
 	Thn            *string        `json:"thn"`
 	Filename       *string        `json:"filename"`
+	FilenameSkPak  *string        `json:"filename_sk_pak"`
+	FilenameDokPak *string        `json:"filename_dok_pak"`
 	IdSync         *string        `gorm:"column:idSync" json:"idSync"`
+	DoBkn          *int           `gorm:"-" json:"do_bkn"`
 	CreatedBy      string         `gorm:"<-:create" json:"created_by"`
 	CreatedAt      *time.Time     `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
 	UpdatedBy      string         `gorm:"<-:update" json:"updated_by"`

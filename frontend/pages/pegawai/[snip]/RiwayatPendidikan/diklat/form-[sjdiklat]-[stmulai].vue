@@ -7,17 +7,17 @@ const { fileBlob } = storeToRefs(modalUploadDoc)
 const { $decodeBase64, $encodeBase64 } = useNuxtApp()
 const route = useRoute()
 const dayjs = useDayjs()
-const {snip, jdiklat, stmulai} = route.params
+const {snip, sjdiklat, stmulai} = route.params
 
 const dataRefDiklat = ref({
 	nip: '',
-	jdiklat:jdiklat,
+	jdiklat:'',
 	tmulai: '',
 })
 
 const dataDiklat = ref({
 	nip: '',
-	jdiklat: jdiklat,
+	jdiklat: '',
 	kdiklat:'',
 	ndiklat: '',
 	tempat: '',
@@ -26,34 +26,63 @@ const dataDiklat = ref({
 	angkatan: '',
 	tmulai:'',
 	takhir: '',
+	tahun:'',
 	jam:'',
 	nsttpp: '',
 	tsttpp: '',
 	akhir:'',
 	filename: '',
+	rumpun_id: '',
 })
 
 const njdiklat = ref('')
+const jenis_diklats = ref([])
 const diklats = ref([])
+const rumpuns = ref([])
+const refJnsDiklat = ref(null)
 const refDiklat = ref(null)
+const refRumpun = ref(null)
 const method = ref('Simpan')
 
 const { pending: pendingRef, data: dataRef, refresh: refreshDataRef } = await useLazyAsyncData('getDataRef', async () => {
-	
-  	const [jenis_diklat, diklat] = await Promise.all([
-  		$fetch('/api/gets/jenis_diklat/'+jdiklat),
+	let jdiklat = $decodeBase64(sjdiklat)
+  	const [jenis_diklat, diklat, rumpun] = await Promise.all([
+  		$fetch('/api/gets/jenis_diklat'),
     	$fetch('/api/posts/diklat', {
     		method: "POST",
     		body: JSON.stringify({
-    			jdiklat: [jdiklat *1]
+    			status: [1],
+    			jdiklat: 1,
     		})
     	}),
+    	$fetch('/api/gets/rumpun_jabatan'),
   	])
 
-  	njdiklat.value = jenis_diklat.nama
+  	//jenis_diklats.value = jenis_diklat
+  	let n = _split(jdiklat, ',')
+  	//console.log(n.length)
+  	if(n.length > 1){
+  		jenis_diklats.value = _filter(jenis_diklat, function(o){
+  			return !n.includes(o.id.toString()) && o.id != 1
+  		});
+  	}else{
+		jenis_diklats.value = _filter(jenis_diklat, function(o){
+  			return o.id == jdiklat
+  		});
+  	}
+
+  	rumpuns.value = rumpun
   	diklats.value = diklat  	
-  	
-  	if(refDiklat){
+
+  	if(refJnsDiklat){
+  		refJnsDiklat.value.reinit()
+  	}
+
+	if(refRumpun){
+		refRumpun.value.reinit()
+	}
+
+	if(refDiklat){
 		refDiklat.value.reinit()
 	}
 });
@@ -63,8 +92,9 @@ const { pending, data, refresh} = await useAsyncData('getdataDiklat', async() =>
 	if(snip){
 		let nip = $decodeBase64(snip)
 		let tmulai = $decodeBase64(stmulai)
-		var result = await $fetch(`/api/gets/riwayat_diklat/${nip}/${jdiklat}/${tmulai}`);
+		let jdiklat = $decodeBase64(sjdiklat)
 
+		var result = await $fetch(`/api/gets/riwayat_diklat/${nip}/${jdiklat}/${tmulai}`);
 		if(result.nip == nip){
 			method.value = "Update"
 
@@ -75,7 +105,19 @@ const { pending, data, refresh} = await useAsyncData('getdataDiklat', async() =>
 			dataRefDiklat.value = _pickBy(result, function(val, key) {
 				return _includes(_keys(dataRefDiklat.value), key);
 			})
+		}else{
+			dataDiklat.value.jdiklat = jdiklat
+			dataRefDiklat.value.jdiklat = jdiklat
 		}
+	}
+})
+
+const jdiklat = computed({
+	get(){
+		return dataDiklat.value.jdiklat
+	},
+	set(val){
+		dataDiklat.value.jdiklat = val
 	}
 })
 
@@ -154,6 +196,8 @@ async function simpanData() {
 	compacted.kdiklat = compacted.kdiklat *1
 	compacted.jam = compacted.jam *1
 	compacted.akhir = compacted.akhir == true ? 1 : 0
+
+	console.log(compacted)
 	
 	var dr = dataRefDiklat.value
 
@@ -307,7 +351,7 @@ const ntmulai = ref([
 		        </div>
 				<div class="mb-8">
 					<div class="inline-flex justify-between items-center w-full gap-x-2">
-						<h2 class="text-xl font-bold text-blue-600">{{njdiklat}}</h2>
+						<h2 class="text-xl font-bold text-blue-600">Diklat</h2>
 						<div class="flex gap-x-2 w-[60%]">
 							<input type="text" class="py-2 px-4 pe-11 block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-80 disabled:pointer-events-none bg-white" placeholder="NIP" :value="dataDiklat.nip">
 							<input type="text" class="py-2 px-4 pe-11 block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-80 disabled:pointer-events-none bg-white" placeholder="Nama">
@@ -318,12 +362,17 @@ const ntmulai = ref([
 				<form>
 					<!-- Grid -->
 					<div class="grid sm:grid-cols-12 gap-2 gap-2.5">
-						
 						<div class="sm:col-span-3">
-							<label class="inline-block text-sm text-gray-800 mt-2.5">Nama {{njdiklat}}</label>
+							<label class="inline-block text-sm text-gray-800 mt-2.5">Jenis</label>
+						</div>
+						<div class="sm:col-span-9">
+							<SearchSelect2 ref="refJnsDiklat" id="jenis_diklats" :options="jenis_diklats" keyList="id" namaList="nama" v-model="jdiklat"/>
+						</div>
+						<div class="sm:col-span-3">
+							<label class="inline-block text-sm text-gray-800 mt-2.5">Nama</label>
 						</div>
 						<!-- End Col -->
-						<template v-if="[1].includes(jdiklat*1)">
+						<template v-if="jdiklat == '1'">
 							<div class="sm:col-span-9">
 								<SearchSelect2 ref="refDiklat" id="diklats" :options="diklats" keyList="id" namaList="nama" v-model="ndiklat"/>
 							</div>
@@ -336,19 +385,17 @@ const ntmulai = ref([
 							<!-- End Col -->
 						</template>
 
-						<template v-if="[1,2,3,4,5,6,7,8,9,10].includes(jdiklat*1)">
-							<div class="sm:col-span-3 sm:col-start-1">
-								<label class="inline-block text-sm text-gray-800 mt-2.5">Tempat {{jdiklat == '9' ? 'Pembuatan' : (jdiklat == '10' ? 'Ujian' : '')}}</label>
-							</div>
-							<!-- End Col -->
+						<div class="sm:col-span-3 sm:col-start-1">
+							<label class="inline-block text-sm text-gray-800 mt-2.5">Tempat {{jdiklat == '9' ? 'Pembuatan' : (jdiklat == '10' ? 'Ujian' : 'Pelaksanaan')}}</label>
+						</div>
+						<!-- End Col -->
 
-							<div class="sm:col-span-9">
-								<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataDiklat.tempat">
-							</div>
-							<!-- End Col -->
-						</template>
-						<template v-if="[1,2,3,4,5,6,7,8,10].includes(jdiklat*1)">
+						<div class="sm:col-span-9">
+							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataDiklat.tempat">
+						</div>
+						<!-- End Col -->
 
+						<template v-if="jdiklat != '9'">
 							<div class="sm:col-span-3">
 								<label class="inline-block text-sm text-gray-800 mt-2.5">{{jdiklat == '8' ? 'Peran Sebagai' : 'Panitia/Penyelenggara'}}</label>
 							</div>
@@ -372,18 +419,6 @@ const ntmulai = ref([
 							<!-- End Col -->
 						</template>
 
-						<template v-if="[1,2,3].includes(jdiklat*1)">
-							<div class="sm:col-span-3">
-								<label class="inline-block text-sm text-gray-800 mt-2.5">Jumlah {{jdiklat == '7' ? 'Hari' : 'Jam'}}</label>
-							</div>
-							<!-- End Col -->
-
-							<div class="sm:col-span-3">
-								<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataDiklat.jam" @keypress="onlyNumber">
-							</div>
-							<!-- End Col -->
-						</template>
-
 						<div class="sm:col-span-3 sm:col-start-1">
 							<label class="inline-block text-sm text-gray-800 mt-2.5">{{ntmulai[jdiklat]}}</label>
 						</div>
@@ -395,77 +430,48 @@ const ntmulai = ref([
 							</div>
 						</div>
 						<!-- End Col -->
-						<template v-if="[1,2,3,4,5,6].includes(jdiklat*1)">
-							<div class="sm:col-span-3">
-								<label class="inline-block text-sm text-gray-800 mt-2.5">Tanggal Selesai</label>
-							</div>
-							<!-- End Col -->
-
-							<div class="sm:col-span-3">
-								<div class="sm:flex gap-2">
-									<input type="date" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="takhir">
-								</div>
-							</div>
-							<!-- End Col -->
-						</template>
-
-						<template v-if="[4,5,6,7].includes(jdiklat*1)">
-							<div class="sm:col-span-3 sm:col-start-1">
-								<label class="inline-block text-sm text-gray-800 mt-2.5">Jumlah {{jdiklat == '7' ? 'Hari' : 'Jam'}}</label>
-							</div>
-							<!-- End Col -->
-
-							<div class="sm:col-span-3">
-								<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataDiklat.jam" @keypress="onlyNumber">
-							</div>
-							<!-- End Col -->
-						</template>
-
-						<template v-if="[10].includes(jdiklat*1)">
-							<div class="sm:col-span-3 sm:col-start-1">
-								<label class="inline-block text-sm text-gray-800 mt-2.5">Berlaku Sampai</label>
-							</div>
-							<!-- End Col -->
-
-							<div class="sm:col-span-3">
-								<div class="sm:flex gap-2">
-									<input type="date" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="takhir">
-								</div>
-							</div>
-							<!-- End Col -->
-						</template>
-
-						<template v-if="[1,2,3,4,5,6,7,10].includes(jdiklat*1)">
-							<div class="sm:col-span-3 sm:col-start-1">
-								<label class="inline-block text-sm text-gray-800 mt-2.5">{{nsttpl[jdiklat]}}</label>
-							</div>
-							<!-- End Col -->
-
-							<div class="sm:col-span-9">
-								<div class="sm:flex gap-2">
-									<input type="test" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataDiklat.nsttpp">
-									<input type="date" class="py-2 px-3 block w-[30%] border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tsttpp">
-								</div>
-							</div>
-							<!-- End Col -->
-						</template>
-
-						<template v-if="[1,2,3,4,5,6].includes(jdiklat*1)">
-							<div class="sm:col-span-3">
-								<label class="inline-block text-sm text-gray-800 mt-2.5">{{njdiklat}} Terakhir</label>
-							</div>
-							<!-- End Col -->
-
-							<div class="sm:col-span-9">
-								<div class="sm:flex gap-2">
-									<div class="flex mt-2">
-									  	<input type="checkbox" class="shrink-0 mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none" id="hs-default-checkbox" v-model="akhir">
-									  	<label for="hs-default-checkbox" class="text-sm text-gray-500 ms-3">{{aakhir}}</label>
-									</div>
-								</div>
-							</div>
-						</template>
+						<div class="sm:col-span-3">
+							<label class="inline-block text-sm text-gray-800 mt-2.5">{{jdiklat == '10' ? 'Berlaku Sampai' : 'Tanggal Selesai'}}</label>
+						</div>
 						<!-- End Col -->
+
+						<div class="sm:col-span-3">
+							<div class="sm:flex gap-2">
+								<input type="date" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="takhir">
+							</div>
+						</div>
+						<!-- End Col -->
+
+						<div class="sm:col-span-3 sm:col-start-1">
+							<label class="inline-block text-sm text-gray-800 mt-2.5">Jumlah Jam</label>
+						</div>
+						<!-- End Col -->
+
+						<div class="sm:col-span-3">
+							<input type="text" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataDiklat.jam" @keypress="onlyNumber">
+						</div>
+						<!-- End Col -->
+
+						<div class="sm:col-span-3 sm:col-start-1">
+							<label class="inline-block text-sm text-gray-800 mt-2.5">{{nsttpl[jdiklat]}}</label>
+						</div>
+						<!-- End Col -->
+
+						<div class="sm:col-span-9">
+							<div class="sm:flex gap-2">
+								<input type="test" class="py-2 px-3 block w-full border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="dataDiklat.nsttpp">
+								<input type="date" class="py-2 px-3 block w-[30%] border border-gray-200 shadow-sm -mt-px -ms-px rounded-lg text-sm relative focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none bg-white" v-model="tsttpp">
+							</div>
+						</div>
+						<!-- End Col -->
+
+						<div class="sm:col-span-3 sm:col-start-1">
+							<label class="inline-block text-sm text-gray-800 mt-2.5">Rumpun Diklat</label>
+						</div>
+						<!-- End Col -->
+						<div class="sm:col-span-9">
+							<SearchSelect2 ref="refRumpun" id="rumpuns" :options="rumpuns" keyList="id" namaList="nama" v-model="dataDiklat.rumpun_id"/>
+						</div>
 					</div>
 					<div class="mt-5 grid sm:grid-cols-12 gap-x-2">
 						<div class="sm:col-span-6 sm:col-start-4">

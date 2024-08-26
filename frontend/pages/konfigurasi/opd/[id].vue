@@ -229,7 +229,7 @@ const findNewIDOPD = (parent) => {
 						<!-- End Col -->
 
 						<div class="sm:col-span-9">
-							<SearchSelect2 ref="refUnorBkn" id="unor_bkns" :options="unor_bkns" keyList="Id" namaList="NamaUnor" v-model="dataOpd.id_unor_bkn" />
+							<SearchSelect3 ref="refUnorBkn" id="unor_bkns" apiUrl="/api/gets/unor_bkn" keyList="Id" namaList="NamaUnor" :textValue="dataOpd.id_unor_bkn" v-model="dataOpd.id_unor_bkn" />
 						</div>
 						<!-- End Col -->
 

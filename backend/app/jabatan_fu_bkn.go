@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	model "newSimpegAPI/model"
+	//"strconv"
 	"strings"
 )
 
@@ -29,6 +30,13 @@ func GetJabatanFuBkn(searchString model.SearchJabatanFuBkn) (jabatan_fu_bkn []mo
 		result = result.Where("master_jabatan_fu_bkn.nama LIKE ?", strings.Join(str, ""))
 	}
 
+	//SearchNama
+	if searchString.SearchNama != "" {
+		nama := strings.TrimSpace(searchString.SearchNama)
+		str := []string{"%", nama, "%"}
+		result = result.Where("master_jabatan_fu_bkn.nama LIKE ?", strings.Join(str, ""))
+	}
+
 	//status
 	if len(searchString.Status) > 0 {
 		result = result.Where("master_jabatan_fu_bkn.status IN (?)", searchString.Status)
@@ -44,17 +52,46 @@ func GetJabatanFuBkn(searchString model.SearchJabatanFuBkn) (jabatan_fu_bkn []mo
 		result = result.Where("master_jabatan_fu_bkn.ref_simpeg = ?", searchString.RefSimpeg)
 	}
 
-	result = result.Find(&jabatan_fu_bkn)
+	result = result.Order("nama asc").Limit(searchString.Limit).Find(&jabatan_fu_bkn)
 
 	return
 }
 
+func SearchJabatanFuBkn(c echo.Context) error {
+	db, _ := model.CreateCon()
+
+	var jabatan_fu_bkn []model.JabatanFuBkn
+
+	req := model.SearchInput{
+		Limit: 10,
+	}
+
+	if err := c.Bind(&req); err != nil {
+		fmt.Println(err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	result := db.Model(&model.JabatanFuBkn{})
+
+	if req.SearchNama != "" {
+		nama := strings.TrimSpace(req.SearchNama)
+		str := []string{nama, "%"}
+		result = result.Where("master_jabatan_fu_bkn.nama LIKE ?", strings.Join(str, ""))
+	}
+
+	result = result.Order("nama asc").Limit(req.Limit).Find(&jabatan_fu_bkn)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       jabatan_fu_bkn,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func FindJabatanFuBkn(c echo.Context) error {
 	var searchString model.SearchJabatanFuBkn
-	//var jabatan_fu_bkn []model.JabatanFuBkn
 
 	err := json.NewDecoder(c.Request().Body).Decode(&searchString)
-	//json.NewDecoder(c.Request().Body).Decode(&searchString)
 
 	if err != nil {
 		searchString.Status = []int{1}

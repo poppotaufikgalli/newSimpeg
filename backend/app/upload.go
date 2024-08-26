@@ -9,6 +9,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	model "newSimpegAPI/model"
 	"os"
 	"path/filepath"
@@ -57,7 +58,7 @@ func UploadPegawai(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -66,7 +67,7 @@ func UploadPegawai(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -75,6 +76,7 @@ func UploadPangkat(c echo.Context) error {
 	tmtpang := c.FormValue("tmtpang")
 	kgolru := c.FormValue("kgolru")
 	knpang := c.FormValue("knpang")
+	updateField := c.FormValue("updateField")
 	filename := c.FormValue("filename")
 	path := c.FormValue("path")
 
@@ -108,9 +110,8 @@ func UploadPangkat(c echo.Context) error {
 
 	if nip != "" {
 		db, _ := model.CreateCon()
-		//result := db.Model(&model.Pegawai{}).Where("nip = ?", nip).Update("file_bmp", filename)
-		//tmtpang = tmtpang.Format("2006-01-02")
-		result := db.Model(&model.RiwayatPangkat{}).Where("nip = ? and tmtpang = ? and kgolru = ? and knpang = ?", nip, tmtpang, kgolru, knpang).Update("filename", filename)
+
+		result := db.Model(&model.RiwayatPangkat{}).Where("nip = ? and tmtpang = ? and kgolru = ? and knpang = ?", nip, tmtpang, kgolru, knpang).Update(updateField, filename)
 
 		if result.Error != nil {
 			return c.JSON(http.StatusBadRequest, result.Error.Error())
@@ -118,7 +119,7 @@ func UploadPangkat(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -127,15 +128,19 @@ func UploadPangkat(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
 func UploadJabatan(c echo.Context) error {
 	nip := c.Param("nip")
-	tmtjab := c.FormValue("tmtjab")
+	id := c.FormValue("id")
+	fieldName := c.FormValue("field_name")
 	filename := c.FormValue("filename")
 	path := c.FormValue("path")
+
+	id_ref_dokumen := c.FormValue("id_ref_dokumen")
+	idSync := c.FormValue("idSync")
 
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -167,8 +172,8 @@ func UploadJabatan(c echo.Context) error {
 
 	if nip != "" {
 		db, _ := model.CreateCon()
-		//result := db.Model(&model.RiwayatPangkat{}).Where("nip = ? and tmtpang = ? and kgolru = ? and knpang = ?", nip, tmtpang, kgolru, knpang).Update("filename", filename)
-		result := db.Model(&model.RiwayatJabatan{}).Where("nip = ? and tmtjab = ?", nip, tmtjab).Update("filename", filename)
+
+		result := db.Model(&model.RiwayatJabatan{}).Where("nip = ? and id = ?", nip, id).Update(fieldName, filename)
 
 		if result.Error != nil {
 			return c.JSON(http.StatusBadRequest, result.Error.Error())
@@ -176,16 +181,207 @@ func UploadJabatan(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
+		}
+
+		if c.Get("gid").(int) == 1 {
+			status_bkn, err := sendDokRwBkn(filename, newpath, id_ref_dokumen, idSync, c.Get("nip").(string))
+
+			if err != nil {
+				return c.JSON(http.StatusNotImplemented, map[string]interface{}{
+					"statusCode": http.StatusNotImplemented,
+					"errors":     err.Error(),
+					"data":       err.Error(),
+					"title":      fmt.Sprintf("Gagal Upload Dokumen %s ke BKN", fieldName),
+				})
+			}
+
+			if fmt.Sprint(status_bkn["code"]) != "1" {
+				return c.JSON(http.StatusNotImplemented, map[string]string{
+					"title":       "Update BKN Gagal",
+					"description": fmt.Sprintf("%s-%s", status_bkn["code"], status_bkn["message"]),
+				})
+			}
 		}
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
+	})
+}
+
+func sendDokRwBkn(filename, path, id_ref_dokumen, idSync, CreatedBy string) (status_bkn map[string]interface{}, err error) {
+	db, _ := model.CreateCon()
+
+	fmt.Println(id_ref_dokumen, idSync)
+	payload := &bytes.Buffer{}
+	writer := multipart.NewWriter(payload)
+
+	src, err := os.Open(path)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer src.Close()
+
+	part, err := writer.CreateFormFile("file", filename)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	_, err = io.Copy(part, src)
+	if err != nil {
+		return
+	}
+
+	url := "https://apimws.bkn.go.id:8243/apisiasn/1.0/upload-dok-rw"
+
+	_ = writer.WriteField("id_riwayat", idSync)
+	_ = writer.WriteField("id_ref_dokumen", id_ref_dokumen)
+
+	writer.Close()
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", url, payload)
+	if err != nil {
+		return
+	}
+
+	req.Header.Add("accept", "application/json")
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	a := getTokenApiManager(CreatedBy)
+	b := getTokenSSO(CreatedBy)
+	d := fmt.Sprintf("bearer %v", a.AccessToken)
+	e := fmt.Sprintf("Bearer %v", b.AccessToken)
+
+	req.Header.Add("Auth", d)
+	req.Header.Add("Authorization", e)
+
+	res, err := client.Do(req)
+	if err != nil {
+		return
+	}
+
+	defer res.Body.Close()
+
+	err = json.NewDecoder(res.Body).Decode(&status_bkn)
+
+	if err != nil {
+		return
+	}
+
+	riwayat_update_bkn := &model.RiwayatUpdateBKN{
+		Deskripsi: fmt.Sprintf("Upload Dokuem Riwayat Jabatan %s", filename),
+		CreatedBy: CreatedBy,
+		Code:      fmt.Sprint(status_bkn["code"]),
+		Message:   fmt.Sprint(status_bkn["message"]),
+	}
+
+	db.Model(&model.RiwayatUpdateBKN{}).Create(&riwayat_update_bkn) // pass pointer of data to Create*/
+
+	return
+}
+
+func DownloadDokRwBKN(c echo.Context) error {
+	//db, _ := model.CreateCon()
+
+	docData := make(map[string]string)
+
+	err := json.NewDecoder(c.Request().Body).Decode(&docData)
+	//	fmt.Println(docData)
+
+	if err != nil {
+		return c.JSON(http.StatusNotImplemented, map[string]interface{}{
+			"title":       "Gagal Download Dokumen BKN",
+			"status":      http.StatusNotImplemented,
+			"errors":      err.Error(),
+			"description": "Gagal decode data input",
+		})
+	}
+
+	//start doupdate
+	// Create the file
+	filename := filepath.Base(fmt.Sprintf("/%s", docData["path"]))
+
+	newpath := filepath.Join("assets", "dokumen", docData["nip"], filename)
+	out, err := os.Create(newpath)
+
+	if err = os.MkdirAll(filepath.Dir(newpath), os.ModeDir|0775); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"title":       "Gagal Download Dokumen BKN",
+			"status":      http.StatusNotImplemented,
+			"errors":      err.Error(),
+			"description": "Gagal membuat direktori",
+		})
+	}
+
+	defer out.Close()
+
+	//db.Model(&model.Singkronisasi{Host: &host}).First(&singkronisasi)
+	url := fmt.Sprintf("https://apimws.bkn.go.id:8243/apisiasn/1.0/download-dok?filePath=%s", url.QueryEscape(docData["path"]))
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"title":       "Gagal Download Dokumen BKN",
+			"status":      http.StatusNotImplemented,
+			"errors":      err.Error(),
+			"description": "Gagal get dari url BKN",
+		})
+	}
+	req.Header.Add("accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+	a := getTokenApiManager(fmt.Sprint(c.Get("nip")))
+	b := getTokenSSO(fmt.Sprint(c.Get("nip")))
+	d := fmt.Sprintf("bearer %v", a.AccessToken)
+	e := fmt.Sprintf("Bearer %v", b.AccessToken)
+
+	//fmt.Println(d)
+	//fmt.Println(e)
+
+	req.Header.Add("Auth", d)
+	req.Header.Add("Authorization", e)
+
+	res, err := client.Do(req)
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"title":       "Gagal Download Dokumen BKN",
+			"status":      http.StatusNotImplemented,
+			"errors":      err.Error(),
+			"description": "Gagal get dari url BKN 2",
+		})
+	}
+
+	defer res.Body.Close()
+
+	size, err := io.Copy(out, res.Body)
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"title":       "Gagal Download Dokumen BKN",
+			"status":      http.StatusNotImplemented,
+			"errors":      err.Error(),
+			"description": "Gagal copy body ke out",
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data": map[string]interface{}{
+			"size":     size,
+			"filename": filename,
+			"path":     newpath,
+		},
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -234,7 +430,7 @@ func UploadTugasTambahan(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -243,7 +439,7 @@ func UploadTugasTambahan(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -292,7 +488,7 @@ func UploadKGB(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -301,7 +497,7 @@ func UploadKGB(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -310,6 +506,9 @@ func UploadAK(c echo.Context) error {
 	tmulai := c.FormValue("tmulai")
 	filename := c.FormValue("filename")
 	path := c.FormValue("path")
+	idSync := c.FormValue("idSync")
+	id_ref_dokumen := c.FormValue("id_ref_dokumen")
+	fieldName := c.FormValue("field_name")
 
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -341,7 +540,7 @@ func UploadAK(c echo.Context) error {
 
 	if nip != "" {
 		db, _ := model.CreateCon()
-		result := db.Model(&model.RiwayatAngkaKredit{}).Where("nip = ? and tmulai = ?", nip, tmulai).Update("filename", filename)
+		result := db.Model(&model.RiwayatAngkaKredit{}).Where("nip = ? and tmulai = ?", nip, tmulai).Update(fieldName, filename)
 
 		if result.Error != nil {
 			return c.JSON(http.StatusBadRequest, result.Error.Error())
@@ -349,16 +548,38 @@ func UploadAK(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
+		}
+
+		if c.Get("gid").(int) == 1 {
+			status_bkn, err := sendDokRwBkn(filename, newpath, id_ref_dokumen, idSync, c.Get("nip").(string))
+
+			fmt.Println(fmt.Sprint(status_bkn["code"]))
+
+			if err != nil {
+				return c.JSON(http.StatusNotImplemented, map[string]interface{}{
+					"statusCode": http.StatusNotImplemented,
+					"errors":     err.Error(),
+					"data":       err.Error(),
+					"title":      fmt.Sprintf("Gagal Upload Dokumen %s ke BKN", fieldName),
+				})
+			}
+
+			if fmt.Sprint(status_bkn["code"]) != "1" {
+				return c.JSON(http.StatusNotImplemented, map[string]string{
+					"title":       "Update BKN Gagal",
+					"description": fmt.Sprintf("%s-%s", status_bkn["code"], status_bkn["message"]),
+				})
+			}
 		}
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -409,7 +630,7 @@ func UploadSTLUD(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -418,7 +639,7 @@ func UploadSTLUD(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -467,7 +688,7 @@ func UploadPMK(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -476,7 +697,7 @@ func UploadPMK(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -525,7 +746,7 @@ func UploadPI(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -534,21 +755,23 @@ func UploadPI(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
-func UploadP2kp(c echo.Context) error {
+func UploadSKP(c echo.Context) error {
 	nip := c.Param("nip")
-	thnilai := c.FormValue("thnilai")
-	tmulai := c.FormValue("tmulai")
-	tselesai := c.FormValue("tselesai")
+	tahun := c.FormValue("tahun")
+	id := c.FormValue("id")
+
+	id_ref_dokumen := c.FormValue("id_ref_dokumen")
+	idSync := c.FormValue("idSync")
 
 	filename, newpath, _ := doUpload(c)
 
 	if nip != "" {
 		db, _ := model.CreateCon()
-		result := db.Model(&model.RiwayatP2kp{}).Where("nip = ? and thnilai = ? and tmulai =? and tselesai=?", nip, thnilai, tmulai, tselesai).Update("filename", filename)
+		result := db.Model(&model.RiwayatSkp{}).Where("nip = ? and tahun = ? and id=?", nip, tahun, id).Update("filename", filename)
 
 		if result.Error != nil {
 			return c.JSON(http.StatusBadRequest, result.Error.Error())
@@ -556,16 +779,92 @@ func UploadP2kp(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
+		}
+
+		if c.Get("gid").(int) == 1 {
+			status_bkn, err := sendDokRwBkn(filename, newpath, id_ref_dokumen, idSync, c.Get("nip").(string))
+
+			fmt.Println(fmt.Sprint(status_bkn["code"]))
+
+			if err != nil {
+				return c.JSON(http.StatusNotImplemented, map[string]interface{}{
+					"statusCode": http.StatusNotImplemented,
+					"errors":     err.Error(),
+					"data":       err.Error(),
+					"title":      fmt.Sprintf("Gagal Upload Dokumen ke BKN"),
+				})
+			}
+
+			if fmt.Sprint(status_bkn["code"]) != "1" {
+				return c.JSON(http.StatusNotImplemented, map[string]string{
+					"title":       "Update BKN Gagal",
+					"description": fmt.Sprintf("%v-%s", status_bkn["code"], status_bkn["message"]),
+				})
+			}
 		}
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
+	})
+}
+
+func UploadKinerja(c echo.Context) error {
+	nip := c.Param("nip")
+	thnilai := c.FormValue("thnilai")
+	id := c.FormValue("id")
+	id_ref_dokumen := c.FormValue("id_ref_dokumen")
+	idSync := c.FormValue("idSync")
+
+	filename, newpath, _ := doUpload(c)
+
+	if nip != "" {
+		db, _ := model.CreateCon()
+		result := db.Model(&model.RiwayatKinerja{}).Where("nip = ? and thnilai = ? and id =?", nip, thnilai, id).Update("filename", filename)
+
+		if result.Error != nil {
+			return c.JSON(http.StatusBadRequest, result.Error.Error())
+		}
+
+		if result.RowsAffected == 0 {
+			return c.JSON(http.StatusNotFound, map[string]interface{}{
+				"statusCode": http.StatusNotFound,
+				"errors":     "Data Not Found",
+			})
+		}
+
+		if c.Get("gid").(int) == 1 {
+			status_bkn, err := sendDokRwBkn(filename, newpath, id_ref_dokumen, idSync, c.Get("nip").(string))
+
+			fmt.Println(fmt.Sprint(status_bkn["code"]))
+
+			if err != nil {
+				return c.JSON(http.StatusNotImplemented, map[string]interface{}{
+					"statusCode": http.StatusNotImplemented,
+					"errors":     err.Error(),
+					"data":       err.Error(),
+					"title":      fmt.Sprintf("Gagal Upload Dokumen ke BKN"),
+				})
+			}
+
+			if fmt.Sprint(status_bkn["code"]) != "1" {
+				return c.JSON(http.StatusNotImplemented, map[string]string{
+					"title":       "Update BKN Gagal",
+					"description": fmt.Sprintf("%v-%s", status_bkn["code"], status_bkn["message"]),
+				})
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"filename":   filename,
+		"path":       newpath,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -586,7 +885,7 @@ func UploadPenghargaan(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -595,7 +894,7 @@ func UploadPenghargaan(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -616,7 +915,7 @@ func UploadHukdis(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -625,7 +924,7 @@ func UploadHukdis(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -646,7 +945,7 @@ func UploadCuti(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -655,7 +954,7 @@ func UploadCuti(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -676,7 +975,7 @@ func UploadOrganisasi(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -685,7 +984,7 @@ func UploadOrganisasi(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -705,7 +1004,7 @@ func UploadBahasa(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -714,7 +1013,7 @@ func UploadBahasa(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -734,7 +1033,7 @@ func UploadTugasLn(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -743,7 +1042,7 @@ func UploadTugasLn(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -764,7 +1063,7 @@ func UploadPendum(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -773,7 +1072,37 @@ func UploadPendum(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
+	})
+}
+
+func UploadTubel(c echo.Context) error {
+	nip := c.Param("nip")
+	id := c.FormValue("id")
+	//kjur := c.FormValue("kjur")
+
+	filename, newpath, _ := doUpload(c)
+
+	if nip != "" {
+		db, _ := model.CreateCon()
+		result := db.Model(&model.RiwayatTubel{}).Where("id = ? and nip = ?", id, nip).Update("filename", filename)
+
+		if result.Error != nil {
+			return c.JSON(http.StatusBadRequest, result.Error.Error())
+		}
+
+		if result.RowsAffected == 0 {
+			return c.JSON(http.StatusNotFound, map[string]interface{}{
+				"statusCode": http.StatusNotFound,
+				"errors":     "Data Not Found",
+			})
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"filename":   filename,
+		"path":       newpath,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -794,7 +1123,7 @@ func UploadDiklat(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -803,7 +1132,7 @@ func UploadDiklat(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -824,7 +1153,7 @@ func UploadKeluarga(c echo.Context) error {
 
 		if result.RowsAffected == 0 {
 			return c.JSON(http.StatusNotFound, map[string]interface{}{
-				"statucCode": http.StatusNotFound,
+				"statusCode": http.StatusNotFound,
 				"errors":     "Data Not Found",
 			})
 		}
@@ -833,7 +1162,7 @@ func UploadKeluarga(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"filename":   filename,
 		"path":       newpath,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -874,21 +1203,21 @@ func doUpload(c echo.Context) (filename, newpath string, err error) {
 
 func UploadDokRwBKN(c echo.Context) error {
 	//nip := c.Param("nip")
+	db, _ := model.CreateCon()
 
 	file, err := c.FormFile("file")
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
+			"statusCode": http.StatusBadRequest,
 			"pos":        "file not found",
 			"errors":     err.Error(),
 		})
 	}
 
-	db, _ := model.CreateCon()
-	var singkronisasi model.Singkronisasi
-	host := "bkn"
+	//var singkronisasi model.Singkronisasi
+	//host := "bkn"
 
-	db.Model(&model.Singkronisasi{Host: &host}).First(&singkronisasi)
+	//db.Model(&model.Singkronisasi{Host: &host}).First(&singkronisasi)
 
 	url := "https://apimws.bkn.go.id:8243/apisiasn/1.0/upload-dok-rw"
 
@@ -929,7 +1258,7 @@ func UploadDokRwBKN(c echo.Context) error {
 
 	/*if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
+			"statusCode": http.StatusBadRequest,
 			"pos":        "A",
 			"errors":     err.Error(),
 		})
@@ -939,7 +1268,7 @@ func UploadDokRwBKN(c echo.Context) error {
 	req, err := http.NewRequest("POST", url, payload)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
+			"statusCode": http.StatusBadRequest,
 			"pos":        "B",
 			"errors":     err.Error(),
 		})
@@ -947,8 +1276,10 @@ func UploadDokRwBKN(c echo.Context) error {
 
 	req.Header.Add("accept", "application/json")
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	d := fmt.Sprintf("bearer %v", *singkronisasi.TokenApimanager)
-	e := fmt.Sprintf("Bearer %v", *singkronisasi.TokenSso)
+	a := getTokenApiManager(fmt.Sprint(c.Get("nip")))
+	b := getTokenSSO(fmt.Sprint(c.Get("nip")))
+	d := fmt.Sprintf("bearer %v", a.AccessToken)
+	e := fmt.Sprintf("Bearer %v", b.AccessToken)
 
 	//fmt.Println(d)
 	//fmt.Println(e)
@@ -959,7 +1290,7 @@ func UploadDokRwBKN(c echo.Context) error {
 	res, err := client.Do(req)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
+			"statusCode": http.StatusBadRequest,
 			"pos":        "C",
 			"errors":     err.Error(),
 		})
@@ -987,7 +1318,7 @@ func UploadDokRwBKN(c echo.Context) error {
 	err = json.NewDecoder(res.Body).Decode(&retData)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"statucCode": http.StatusBadRequest,
+			"statusCode": http.StatusBadRequest,
 			"errors":     err.Error(),
 		})
 	}

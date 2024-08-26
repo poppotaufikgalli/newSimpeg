@@ -9,15 +9,18 @@ func (RiwayatUpdateBKN) TableName() string {
 }
 
 type RiwayatUpdateBKN struct {
-	ID        uint       `gorm:"primaryKey;autoIncrement:false" json:"id" validate:"required"`
-	Deskripsi string     `json:"deskripsi"`
-	Content   string     `json:"content"`
-	Code      string     `json:"code"`
-	Message   string     `json:"message"`
-	CreatedBy string     `gorm:"<-:create" json:"created_by"`
-	CreatedAt *time.Time `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
-	UpdatedBy string     `gorm:"<-:update" json:"updated_by"`
-	UpdatedAt *time.Time `gorm:"<-:update" json:"updated_at"` // Automatically managed by GORM for update time
+	ID           uint       `gorm:"primaryKey;autoIncrement:false" json:"id" validate:"required"`
+	Nip          string     `json:"nip"`
+	JenisRiwayat string     `json:"jenis_riwayat"`
+	IdKeyValue   string     `json:"id_key_value"`
+	Deskripsi    string     `json:"deskripsi"`
+	Content      string     `json:"content"`
+	Code         string     `json:"code"`
+	Message      string     `json:"message"`
+	CreatedBy    string     `gorm:"<-:create" json:"created_by"`
+	CreatedAt    *time.Time `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
+	UpdatedBy    string     `gorm:"<-:update" json:"updated_by"`
+	UpdatedAt    *time.Time `gorm:"<-:update" json:"updated_at"` // Automatically managed by GORM for update time
 }
 
 type UpdateBKNDataUtama struct {

@@ -19,10 +19,6 @@ const items = [
     to: "/login"
   }]
 ]
-
-function search(){
-	console.log(snip)
-}
 </script>
 <template>
 	<div>
@@ -46,10 +42,9 @@ function search(){
 		        <div class="overflow-hidden overflow-y-auto max-h-[75vh] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300">
 		          <div class="flex flex-col gap-x-0 mt-5 divide-y divide-dashed divide-gray-200 md:flex-row md:items-center md:justify-end md:gap-x-7 md:mt-0 md:ps-7 md:divide-y-0 md:divide-solid">
 		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/">Beranda</NuxtLink>
-
 		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/pegawai">Pegawai</NuxtLink>
 		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/konfigurasi/group">Konfigurasi</NuxtLink>
-		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/approval">Approval</NuxtLink>
+		            <NuxtLink class="font-medium hover:text-gray-400 transition py-3 md:py-6" activeClass="text-blue-600" to="/">Approval</NuxtLink>
 		            <div class="hs-dropdown [--strategy:static] md:[--strategy:absolute] [--adaptive:none] md:[--trigger:hover] py-3 md:py-6">
 								  <button type="button" class="flex items-center w-full text-gray-800 hover:text-gray-600 font-medium">
 								    Resources

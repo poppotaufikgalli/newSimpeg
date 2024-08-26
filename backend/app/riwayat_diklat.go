@@ -47,7 +47,7 @@ func GetRiwayatDiklat(searchString model.SearchRiwayatDiklat) (riwayat_diklat []
 		result = result.Where("master_riwayat_diklat.tmulai = ?", searchString.Tmulai)
 	}
 
-	result = result.Find(&riwayat_diklat)
+	result = result.Preload("JenisDiklat").Order("tmulai desc").Find(&riwayat_diklat)
 
 	return
 

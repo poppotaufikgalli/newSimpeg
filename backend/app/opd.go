@@ -91,6 +91,36 @@ func FindOPD(c echo.Context) error {
 	})
 }
 
+func SearchOPDFilter(c echo.Context) error {
+	db, _ := model.CreateCon()
+	var opd []model.Opd
+
+	req := model.SearchInput{
+		Limit: 10,
+	}
+
+	if err := c.Bind(&req); err != nil {
+		fmt.Println(err)
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	result := db.Model(&model.Opd{})
+
+	if req.SearchNama != "" {
+		nama := strings.TrimSpace(req.SearchNama)
+		str := []string{"%", nama, "%"}
+		result = result.Where("master_opd.nama LIKE ? or master_opd.id LIKE ?", strings.Join(str, ""), strings.Join(str, ""))
+	}
+
+	result = result.Order("nama asc").Debug().Limit(req.Limit).Find(&opd)
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":       opd,
+		"statucCode": http.StatusOK,
+		"count":      result.RowsAffected,
+	})
+}
+
 func GetOPDbyId(c echo.Context) error {
 	db, _ := model.CreateCon()
 	var opd model.Opd

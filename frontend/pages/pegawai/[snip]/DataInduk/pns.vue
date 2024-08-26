@@ -141,20 +141,28 @@ async function simpanData() {
 			body: JSON.stringify(body),
 		})
 
+		console.log(data.value)
+		console.log(error.value.data.data)
+
 		if(error.value){
+			const {title, description} = error.value.data.data
 			toast.add({
-		    	id: 'error_put_pns',
-		    	description: error.value.data.data,
-		    	timeout: 6000
-		  	}) 	
+				id: 'error_put_pns',
+				icon: "i-heroicons-x-circle",
+				title: title,
+				description: description,
+				timeout: 6000,
+				color: 'red',
+			}) 	
 		}else{
 			toast.add({
-		    	id: 'success_put_pns',
-		    	description: "Data berhasil di Update",
-		    	timeout: 6000
-		  	}) 	
+				id: 'success_put_pns',
+				icon: "i-heroicons-check-circle",
+				title: "Update Data Berhasil",
+				description: "Data telah di Update",
+				timeout: 6000
+			}) 	
 		}
-		//console.log(error.value.data.data)
 		
 	}else{
 		compacted.nip = $decodeBase64(snip)
@@ -165,19 +173,25 @@ async function simpanData() {
 		})
 
 		if(error.value){
+			const {title, description} = error.value.data.data
 			toast.add({
-		    	id: 'error_post_pns',
-		    	description: error.value.data.data,
-		    	timeout: 6000
-		  	}) 	
+				id: 'error_post_pns',
+				icon: "i-heroicons-x-circle",
+				title: title,
+				description: description,
+				timeout: 6000,
+				color: 'red',
+			}) 	
 		}else{
 			toast.add({
-		    	id: 'success_post_pns',
-		    	description: "Data berhasil di Ditambahkan",
-		    	timeout: 6000
-		  	}) 	
+				id: 'success_post_pns',
+				icon: "i-heroicons-check-circle",
+				description: "Data berhasil di Ditambahkan",
+				timeout: 6000
+			}) 	
 		}
 	}
+
   	showSpinner.value = false
   	refreshNuxtData(["getDataRef", "getDataPNS"])
 }
@@ -207,6 +221,7 @@ const callback = async(e) => {
 
 		formData.append("file", fileBlob.value[0]);
 		formData.append("filename", nip+"_pns");
+		formData.append("updateField", "filename");
 		formData.append("path", 'dokumen/'+nip);
 
 		var {data, error} = await useFetch(`/api/uploads/upload/pangkat/${nip}`, {
@@ -310,31 +325,33 @@ const callback = async(e) => {
 							</div>
 						</div>
 						<!-- End Col -->
-
 					</div>
 					<div class="mt-5 grid sm:grid-cols-12 gap-x-2">
-						<div class="sm:col-span-6 sm:col-start-4">
+						<div class="sm:col-span-7 sm:col-start-4">
 							<div class="sm:flex gap-2">
 								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none" @click="refresh">
 					  				Batal
 								</button>
-								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData">
+								<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="simpanData()">
 					  				{{method}} Data
 								</button>	
 							</div>
-						</div>
-						<!-- End Col -->
-
-						<div class="sm:col-span-3 flex justify-end" v-if="method == 'Update'">
-							<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none" v-on:click="doUploadDoc()">
-				  				Upload File
-							</button>
 						</div>
 						<!-- End Col -->
 		  			</div>
 				</form>
 	  		</div>
 	  		<!-- End Card -->
+	  		<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2 mt-6" v-if="method == 'Update'">
+				<div class="mb-8">
+					<h2 class="text-xl font-bold text-blue-600">Dokumen PNS</h2>
+				</div>
+				<div class="grid sm:grid-cols-4 gap-2 gap-2.5">
+					<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="doUploadDoc()">
+		  				SK PNS
+					</button>
+				</div>
+			</div>
 		</div>
 		<!-- End Card Section -->
 	</LayoutDataInduk>

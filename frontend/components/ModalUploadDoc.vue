@@ -3,7 +3,7 @@ import { useModalUploadDoc } from '~/store/modalUploadDoc';
 const modalUploadDoc = useModalUploadDoc();
 const fileInput = ref(null)
 
-const { displayModal, modalTitle, modalFile, modalFileType, fileBlob } = storeToRefs(modalUploadDoc)
+const { displayModal, modalTitle, modalFile, modalFileType, fileBlob, typeAction } = storeToRefs(modalUploadDoc)
 
 watch(displayModal, (val) => {
 	if(val){
@@ -27,6 +27,10 @@ const doAction = () => {
 	}
 }
 
+const doAction2 = () => {
+	modalUploadDoc.doAction()
+}
+
 </script>
 <template>
 	<div id="modalUploadDoc" class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto">
@@ -46,18 +50,24 @@ const doAction = () => {
 								{{modalTitle}}
 							</h3>
 							<div class="max-w">
-							  	<div class="flex justify-between">
-							    	<label class="block">
-							      		<span class="sr-only">Choose profile photo</span>
-							      		<input ref="fileInput" type="file" class="block w-full text-sm text-gray-500 file:me-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:disabled:opacity-50 file:disabled:pointer-events-none" :accept="modalFileType" v-on:change="handleFileChange($event)">
-							    	</label>
-							    	<button class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:pointer-events-none" @click="doAction">
-										Upload
+								<template v-if="typeAction == 'upload'">
+								  	<div class="flex justify-between">
+								    	<label class="block">
+								      		<span class="sr-only">Choose profile photo</span>
+								      		<input ref="fileInput" type="file" class="block w-full text-sm text-gray-500 file:me-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:disabled:opacity-50 file:disabled:pointer-events-none" :accept="modalFileType" v-on:change="handleFileChange($event)">
+								    	</label>
+								    	<button class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:pointer-events-none" @click="doAction">
+											Upload
+										</button>
+								  	</div>
+							  	</template>
+							  	<template v-else-if="typeAction == 'download' ">
+								  	<button class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:pointer-events-none" @click="doAction2">
+										Simpan Dokumen BKN
 									</button>
-							  	</div>
+								</template>
 							</div>
 							<div class="flex justify-center mt-2" v-if="displayModal">
-								<!--<img :src="modalFile" class="w-full rounded">-->
 								<embed :src="modalFile" class="w-full h-screen" />
 							</div>
 						</div>

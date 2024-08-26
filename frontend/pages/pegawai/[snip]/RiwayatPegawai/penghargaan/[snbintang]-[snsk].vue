@@ -8,6 +8,7 @@ const { $decodeBase64, $encodeBase64 } = useNuxtApp()
 const route = useRoute()
 const dayjs = useDayjs()
 const {snip, snbintang, snsk} = route.params
+const {sbkn} = route.query
 
 const dataRefPenghargaan = ref({
 	nip: '',
@@ -24,6 +25,7 @@ const dataPenghargaan = ref({
 	tsk: '',
 	thn: 0,
 	filename: '',
+	idSync: '',
 })
 
 const jnss = ref([])
@@ -53,25 +55,42 @@ const { pending: pendingRef, data: dataRef, refresh: refreshDataRef } = await us
 });
 
 const { pending, data, refresh} = await useAsyncData('getdataPenghargaan', async() => {
-	console.log("CariData")
+	console.log("CariData : ", sbkn)
+
 	if(snip){
 		let nip = $decodeBase64(snip)
-		let nbintang = $decodeBase64(snbintang)
-		let nsk = $decodeBase64(snsk)
-		var result = await $fetch(`/api/gets/riwayat_penghargaan/${nip}/${nbintang}/${nsk}`);
 
-		console.log(result)
+		if(sbkn != ""){
+			let sid = $decodeBase64(sbkn)
+			var result = await $fetch(`/api/gets/singkronisasi_bkn/getDataBKNById/penghargaan/${sid}`)
+			
+			let tsk = dayjs(dayjs(result.data.skDate, "DD-MM-YYYY")).format("YYYY-MM-DD[T]HH:mm:ss[Z]")
+			dataPenghargaan.value = {
+				nip: nip,
+				id_jenis_penghargaan: result.data.hargaId,
+				nbintang: result.data.hargaNama,
+				tsk: tsk,
+				nsk: result.data.skNomor,
+				thn: result.data.tahun,
+				idSync: sid,
+			}
+		}else{
 
-		if(result.nip == nip){
-			method.value = "Update"
+			let nbintang = $decodeBase64(snbintang)
+			let nsk = $decodeBase64(snsk)
+			var result = await $fetch(`/api/gets/riwayat_penghargaan/${nip}/${nbintang}/${nsk}`);
 
-			dataPenghargaan.value = _pickBy(result, function(val, key) {
-				return _includes(_keys(dataPenghargaan.value), key);
-			})
+			if(result.nip == nip){
+				method.value = "Update"
 
-			dataRefPenghargaan.value = _pickBy(result, function(val, key) {
-				return _includes(_keys(dataRefPenghargaan.value), key);
-			})
+				dataPenghargaan.value = _pickBy(result, function(val, key) {
+					return _includes(_keys(dataPenghargaan.value), key);
+				})
+
+				dataRefPenghargaan.value = _pickBy(result, function(val, key) {
+					return _includes(_keys(dataRefPenghargaan.value), key);
+				})
+			}
 		}
 	}
 })
@@ -110,6 +129,7 @@ const toast = useToast()
 
 async function simpanData() {
 	showSpinner.value = true
+	var canUpdateBkn = false
 
 	var compacted = _pickBy(dataPenghargaan.value);
 	compacted.tsk = compacted.tsk ? dayjs(dayjs(compacted.tsk, "YYYY-MM-DD")).format("YYYY-MM-DD[T]HH:mm:ss[Z]") : null
@@ -132,15 +152,21 @@ async function simpanData() {
 		if(error.value){
 			toast.add({
 		    	id: 'error_put_penghargaan',
+		    	icon: "i-heroicons-x-circle",
+				title: "Update Data Penghargaan",
 		    	description: error.value.data.data,
-		    	timeout: 6000
+		    	timeout: 6000,
+		    	color: 'red',
 		  	}) 	
 		}else{
 			toast.add({
 		    	id: 'success_put_penghargaan',
+		    	icon: "i-heroicons-check-circle",
+				title: "Update Data Penghargaan",
 		    	description: "Data berhasil di Update",
 		    	timeout: 6000
 		  	}) 	
+		  //	canUpdateBkn = true
 		}
 	}else{
 		compacted.nip = $decodeBase64(snip)
@@ -155,17 +181,55 @@ async function simpanData() {
 		if(error.value){
 			toast.add({
 		    	id: 'error_post_penghargaan',
+		    	icon: "i-heroicons-check-circle",
+				title: "Tambah Data Penghargaan",
 		    	description: error.value.data.data,
-		    	timeout: 6000
+		    	timeout: 6000,
+		    	color: 'red'
 		  	}) 	
 		}else{
 			toast.add({
 		    	id: 'success_post_penghargaan',
+		    	icon: "i-heroicons-x-circle",
+				title: "Tambah Data Penghargaan",
 		    	description: "Data berhasil di Ditambahkan",
 		    	timeout: 6000
 		  	}) 	
+		  	//canUpdateBkn = true
 		}
 	}
+
+	//update bkn
+
+	if(canUpdateBkn == true && sbkn == ""){
+		var {data, error} = await useFetch('/api/posts/riwayat_penghargaan/bkn', {
+			method: 'POST',
+			body: JSON.stringify(compacted),
+		})
+
+		if(error.value){
+			const {title, description} = error.value.data.data
+			toast.add({
+				id: 'error_put_penghargaan_bkn',
+				icon: "i-heroicons-x-circle",
+				title: title,
+				description: description,
+				timeout: 6000,
+				color: 'red',
+			}) 	
+		}else{
+			toast.add({
+				id: 'success_put_penghargaan_bkn',
+				icon: "i-heroicons-check-circle",
+				title: "Update Data Penghargaan BKN Berhasil",
+				description: "Data telah di Update",
+				timeout: 6000
+			}) 	
+		}
+	}
+
+	//end update bkn
+
   	showSpinner.value = false
   	refreshNuxtData(["getDataRef"])
 }
@@ -319,17 +383,20 @@ function onlyNumber ($event) {
 							</div>
 						</div>
 						<!-- End Col -->
-
-						<div class="sm:col-span-3 flex justify-end" v-if="method == 'Update'">
-							<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none" v-on:click="doUploadDoc()">
-				  				Upload File
-							</button>
-						</div>
-						<!-- End Col -->
 		  			</div>
 				</form>
 	  		</div>
 	  		<!-- End Card -->
+		</div>
+		<div class="bg-white rounded-xl shadow py-4 px-6 border-t-2 mt-6" v-if="method == 'Update'">
+			<div class="mb-8">
+				<h2 class="text-xl font-bold text-blue-600">Dokumen Penghargaan</h2>
+			</div>
+			<div class="grid sm:grid-cols-4 gap-2 gap-2.5">
+				<button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" @click="doUploadDoc()">
+					Dokumen Penghargaan
+				</button>
+			</div>
 		</div>
 		<!-- End Card Section -->
 	</LayoutRiwayatPegawai>

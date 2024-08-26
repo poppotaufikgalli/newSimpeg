@@ -5,12 +5,14 @@ export const useModalUploadDoc = defineStore('modal-upload-doc', () => {
     const modalFile = ref('')
     const modalFileType = ref('')
     const fileBlob = ref(null)
+    const typeAction = ref(null)
 
-    function showModal(title, typeFile, file) {
+    function showModal(title, typeFile, file, ta=null) {
         modalTitle.value = title
         modalFileType.value = typeFile
         modalFile.value = file
         displayModal.value = true
+        typeAction.value = ta
     }
 
     function closeModal(){
@@ -32,5 +34,6 @@ export const useModalUploadDoc = defineStore('modal-upload-doc', () => {
         closeModal, 
         doAction, 
         fileBlob,
+        typeAction,
     }
 })

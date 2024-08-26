@@ -28,6 +28,7 @@ var (
 type JwtCustomClaims struct {
 	Nip     string `json:"nip"`
 	TokenId string `json:"token_id"`
+	Gid     int    `json:"gid"`
 	jwt.RegisteredClaims
 }
 
@@ -41,6 +42,22 @@ func init() {
 	//SIAP_AUTH_API = os.Getenv("SIAP_AUTH_API_DEV")
 	SIAP_REST_API_TOKEN = os.Getenv("SIAP_REST_API_TOKEN")
 	APP_KEY = os.Getenv("APP_KEY")
+}
+
+func DerefString(s *string) string {
+	if s != nil {
+		return *s
+	}
+
+	return ""
+}
+
+func DerefTime(s *time.Time) string {
+	if s != nil {
+		return s.Format("02-01-2006")
+	}
+
+	return ""
 }
 
 func UserInfo(nip, token_id string) (result model.UsersToken, RowsAffected int64) {
@@ -67,10 +84,20 @@ func Login(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 
+	ti := time.Now()
+	ret.Datauser.LoginAt = &ti
+	ret.Datauser.ExpiresAt = &expires_at
+	ret.Datauser.TokenId = token_id
+
+	//var isAdmin int64
+	ret.Datauser = saveloginInfo(ret.Datauser)
+	fmt.Println(ret.Datauser.Gid)
+
 	// Set custom claims
 	claims := &JwtCustomClaims{
 		ret.Datauser.Nip,
 		token_id,
+		ret.Datauser.Gid,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expires_at),
 		},
@@ -85,19 +112,10 @@ func Login(c echo.Context) error {
 		return err
 	}
 
-	ti := time.Now()
-	ret.Datauser.LoginAt = &ti
-	ret.Datauser.ExpiresAt = &expires_at
-	ret.Datauser.TokenId = token_id
-
-	var isAdmin int64
-	ret.Datauser, isAdmin = saveloginInfo(ret.Datauser)
-
 	return c.JSON(http.StatusOK, echo.Map{
 		"token":      t,
 		"datauser":   ret.Datauser,
-		"is_admin":   isAdmin,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -112,7 +130,7 @@ func Logout(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{
 		"nip":        claims.Nip,
 		"message":    "Logout Success",
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -125,7 +143,7 @@ func IsLogin(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, echo.Map{
 		"datauser":   result,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
 }
 
@@ -145,15 +163,16 @@ func AuthorizeRequest(next echo.HandlerFunc) echo.HandlerFunc {
 		if ra == 0 {
 			return c.JSON(http.StatusUnauthorized, echo.Map{
 				"message":    "Request Unauthorized",
-				"statucCode": http.StatusUnauthorized,
+				"statusCode": http.StatusUnauthorized,
 			})
 		}
 		c.Set("nip", claims.Nip)
+		c.Set("gid", claims.Gid)
 		return next(c)
 	}
 }
 
-func saveloginInfo(dtuser model.UsersToken) (model.UsersToken, int64) {
+func saveloginInfo(dtuser model.UsersToken) model.UsersToken {
 	db, _ := model.CreateCon()
 
 	db.Model(&model.UsersToken{}).Clauses(clause.Returning{}, clause.OnConflict{
@@ -167,12 +186,15 @@ func saveloginInfo(dtuser model.UsersToken) (model.UsersToken, int64) {
 		}),
 	}).Create(&dtuser)
 
-	var user model.Users
-	result := db.Model(&model.Users{}).Where("nip = ? and stts = ?", dtuser.Nip, 1).First(&user)
+	//var user model.Users
+	db.Model(&model.UsersToken{}).Where("nip = ? and stts = ?", dtuser.Nip, 1).First(&dtuser)
 
-	douser := dtuser
+	//dtuser.Gid = user.Gid
 
-	return douser, result.RowsAffected
+	//fmt.Println(user)
+	fmt.Println(dtuser.Gid)
+
+	return dtuser
 }
 
 func siapLogin(c echo.Context) (res model.SIAPResponse, err error) {
@@ -182,7 +204,7 @@ func siapLogin(c echo.Context) (res model.SIAPResponse, err error) {
 	_ = writer.WriteField("password", c.FormValue("password"))
 	err = writer.Close()
 	if err != nil {
-		fmt.Println(err)
+		//fmt.Println("=>?", err)
 		return
 	}
 
@@ -270,6 +292,13 @@ func FakeLogin(c echo.Context) error {
 			"token_id":   token_id,
 		},
 		"is_admin":   1,
-		"statucCode": http.StatusOK,
+		"statusCode": http.StatusOK,
 	})
+}
+
+func CheckLevel(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		fmt.Println(c.Get("gid"))
+		return next(c)
+	}
 }

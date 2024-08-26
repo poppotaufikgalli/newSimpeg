@@ -1,16 +1,25 @@
 <script setup>
+const { $decodeBase64, $encodeBase64 } = useNuxtApp()
 const route = useRoute()
 const {snip} = route.params
+const slug = ref('')
+const { pending, data, refresh} = await useLazyAsyncData('getJenisDiklat', async() => {
+	console.log("CariData Jenis Diklat")
 
-const { pending, data: jnsDiklat, refresh} = await useLazyAsyncData('getJenisDiklat', async() => {
-		console.log("CariData Jenis Diklat")
-
-		return await $fetch('/api/gets/jenis_diklat');
-});
+	var dik = await $fetch('/api/gets/jenis_diklat');
+	
+	var result = _filter(dik, {ref_bkn : null})
+	var a = result.map(o => o.id)
+	//console.log(_join(a))
+	slug.value = _join(a)
+	return result
+})
 
 onMounted(() => {
-		refreshNuxtData(["getJenisDiklat"])
+	refreshNuxtData('getJenisDiklat')
 })
+	
+
 </script>
 <style scoped>
 .router-link-active {
@@ -31,15 +40,23 @@ onMounted(() => {
 						<div class="flex flex-wrap">
 						  	<div class="w-full">
 						  		<nav class="-me-0.5 flex flex-col border divide-y rounded-md overflow-hidden">
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/RiwayatPendidikan/pendum`">
-							      		Pendidikan Umum
+							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :class="{ 'router-link-active': route.path.includes(`/pegawai/${snip}/RiwayatPendidikan/pendum/`) }" :to="`/pegawai/${snip}/RiwayatPendidikan/pendum`">
+							      		Pendidikan Umum 
 							    	</NuxtLink>
-							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/RiwayatPendidikan/tubel`">
-							      		Tugas Belajar
+							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :class="{ 'router-link-active': route.path.includes(`/pegawai/${snip}/RiwayatPendidikan/tubel/`) }" :to="`/pegawai/${snip}/RiwayatPendidikan/tubel`">
+							      		Tugas Belajar 
 							    	</NuxtLink>
-							    	<template v-if="jnsDiklat" v-for="(item, idx) in jnsDiklat" :key="idx">
+							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/RiwayatPendidikan/diklat/list-1-1`">
+							      		Diklat Struktural
+							    	</NuxtLink>
+							    	<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" :to="`/pegawai/${snip}/RiwayatPendidikan/diklat/list-1-${slug}`">
+							      		Kursus / Diklat Lainnya
+							    	</NuxtLink>
+							    </nav>
+							    <nav class="-me-0.5 flex flex-col border divide-y rounded-md overflow-hidden mt-5">
+							    	<template v-if="data" v-for="(item, idx) in data" :key="idx">
 							    		<NuxtLink class="p-2 inline-flex items-center gap-2 text-sm font-medium text-gray hover:outline-none hover:text-blue-600 hover:bg-blue-200" 
-							    		:to="{ path: `/pegawai/${snip}/RiwayatPendidikan/diklat/${item.id}`}">
+							    		:to="{ path: `/pegawai/${snip}/RiwayatPendidikan/diklat/list-0-${item.id}`}">
 							    	  	{{item.nama}}
 							    		</NuxtLink>	
 							    	</template>

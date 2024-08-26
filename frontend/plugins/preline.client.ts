@@ -9,11 +9,16 @@ declare global {
 export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.hook("app:beforeMount", () => {
     window.HSStaticMethods.autoInit();
+    //window.HSCombobox.autoInit()
   });
   nuxtApp.hook("page:load", () => {
     window.HSStaticMethods.autoInit();
+    //window.HSCombobox.autoInit()
   });
   nuxtApp.hook("page:finish", () => {
     window.HSStaticMethods.autoInit();
+    //window.HSCombobox.autoInit()
   });
 });
+
+//window.HSStaticMethods.autoInit();

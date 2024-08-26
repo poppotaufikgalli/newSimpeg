@@ -27,6 +27,7 @@ type RiwayatPendum struct {
 	Ktpu              string            `json:"ktpu" validate:"required"`
 	TingkatPendidikan TingkatPendidikan `gorm:"foreignKey:Ktpu" json:"TingkatPendidikan" validate:"-"`
 	Kjur              string            `json:"kjur" validate:"required"`
+	KjurBkn           *string           `json:"kjur_bkn"`
 	Pendidikan        Pendidikan        `gorm:"foreignKey:Kjur" json:"Pendidikan" validate:"-"`
 	Nsek              *string           `json:"nsek"`
 	Tempat            *string           `json:"tempat"`
@@ -38,6 +39,7 @@ type RiwayatPendum struct {
 	Negara            *string           `json:"negara"`
 	Ket               *string           `json:"ket"`
 	Filename          *string           `json:"filename"`
+	IdSync            *string           `gorm:"column:idSync" json:"idSync"`
 	CreatedBy         string            `gorm:"<-:create" json:"created_by"`
 	CreatedAt         *time.Time        `gorm:"<-:create" json:"created_at"` // Automatically managed by GORM for creation time
 	UpdatedBy         string            `gorm:"<-:update" json:"updated_by"`

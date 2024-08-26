@@ -1,16 +1,19 @@
-export default defineNuxtPlugin(async(nuxtApp) => {
-  console.log("mengecek token den..")
-    
-  const config = useRuntimeConfig()
-  const token = useCookie('token');
-  
-  if(token.value){
-    const data = await fetch('/api/islogin').then((response) => 
-      response.json().then(data => ({status: response.status, data: data}))
-    )
+import { useAuthStore } from '~/store/auth';
 
-    if(data.status !== 200){
-      token.value = ""
-    }
-  }
+export default defineNuxtPlugin(async(nuxtApp) => {
+  console.log("mengecek token den..[plugins-start.client.ts]")
+  //const config = useRuntimeConfig()
+
+  const { islogin } = useAuthStore(); 
+  //const { authenticated } = storeToRefs(useAuthStore()); // make authenticated state reactive
+  //const token = useCookie('token');
+  await islogin()  
+  
+  //if(token.value){
+    //if(authenticated.value){
+      
+      //console.log("token", token.value)
+      //console.log("authenticated", authenticated.value)
+    //}
+  //}
 })
